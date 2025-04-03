@@ -1,0 +1,54 @@
+# Node.js 项目忽略文件
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python 项目忽略文件
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
+*.egg
+*.pyo
+
+# 日志文件
+*.log
+
+# 操作系统文件忽略
+.DS_Store
+Thumbs.db
+
+# IDE 和编辑器配置文件忽略
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# 密码文件、输出文件
+*.csv
+*.xlsx
+*.xls
+*.gexf
+*.gephi
+*.jb
+*.graphml
+*.pyc
+
+# 忽略特定文件夹（例如：中间数据文件夹）
+/search_result/
+/test/
+/result/
+/测试集/
+/Previous/
+/行业名录/
+# 其他可能的临时文件
+*.log
+*.tmp
+*.cache
+test.py
+
+# 环境配置文件（如敏感信息）
+.env
+.env.local
