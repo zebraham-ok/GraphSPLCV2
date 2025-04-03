@@ -10,7 +10,7 @@
     + **Section**：切片，目前选择中文512，英文1024，包含content，position在Article中的序号，find_entity标记是否已经被实体抽取过（由`SQL2Neo4j.py`生成）,find_product标记是否已经被product抽取过。
     + **Entity**：在Section原文中的实体，由qwen-3.5-turbo生成（由`SectionNER_RE.py`的`ai_entity_recognition`生成）
     + **EntityObj**：Entity的中文正式实体名，最初被`ai_entity_recognition`生成的时候它只有一个名字。之后会在`ai_relation_extraction_ORG`函数的作用下获得`ALLOWED_ENTITY_TYPES_FOR_ORG={"Company", "Factory", "MiningSite", "Government", "Academic", 'Media', "NGO", "Others"}`之一的Label，所以EntityObj大多是有两个Label的。
-    + 由大语言模型生成的实体和关系都会获得一个`qwen=True`的标签
+    + 由大语言模型生成的实体和关系都会获得一个`qwen=True`的标签<br>
 **————上面是实体，下面是关系————**
     + **Section**-**SectionOf**->**Article**：被`SQL2Neo4j.py`生成
     + **Section**-**Mention**->**Entity**：（由`SectionNER_RE.py`的`ai_entity_recognition`生成）
@@ -26,7 +26,7 @@
     <!-- + **ProductModel**：具体的产品型号，让大模型基于原文生成一个对于产品的描述，然后再通过向量匹配建立与**ProductCategory**之间的关系 -->
     + **Product**：Section原文中提到的实体，对其**name**属性进行了向量化，用于和Product.full_name进行匹配。
     + **ManufactoringProcess**：暂时没有进行抽取
-    + **Factory**、**MiningSite**：进行了抽取但是暂未实际使用
+    + **Factory**、**MiningSite**：进行了抽取但是暂未实际使用<br>
 **————上面是实体，下面是关系————**
     <!-- + **ProductModel**-**BelongToCategory**->**ProductCategory** -->
     + **ProductCategory**-**SubCategoryOf**->**ProductCategory**
