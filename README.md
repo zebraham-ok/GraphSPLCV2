@@ -1,5 +1,3 @@
-"# GraphSPLCV2" 
-
 # 架构说明
 + 全文存在SQL中，切片（Section）存在neo4j中
 + Section和Company都以节点形式存储在一个database中

@@ -195,7 +195,9 @@ class Neo4jExporter:
         for edge in G.edges:
             edge_info=G.edges[edge]
             for attr in self.rel_attr_list:
-                if isinstance(edge_info[attr], list):
+                if attr not in edge_info:
+                    edge_info[attr]=""
+                elif isinstance(edge_info[attr], list):
                     edge_info[attr]=most_frequent(edge_info[attr])
         return G
 
