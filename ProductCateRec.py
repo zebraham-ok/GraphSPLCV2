@@ -22,6 +22,7 @@ class ProductClassifier:
             WITH r.product AS p_name, elementid(r) AS r_id, r.analysing_process AS content
             MERGE (p:Product {name: p_name})
             RETURN elementid(p) AS p_id, p_name, r_id, content
+            order by rand()
             LIMIT $batch_size
         ''', parameters={"batch_size": self.batch_size})
 
@@ -88,8 +89,8 @@ class ProductClassifier:
         prompt = self.build_prompt(p_name, selection_dict, content)
         response = ask_qwen(
             prompt_text=prompt,
-            system_instruction="产品分类专家，熟读分类目录，用JSON格式回答",
-            temperature=0.05,
+            system_instruction="你是产品分类专家，熟读分类目录，用JSON格式回答",
+            temperature=0.1,
             mode="json",
             model="qwen-turbo"
         )
@@ -107,7 +108,7 @@ class ProductClassifier:
             selection_range={selection_dict}
         1. 首先，请重复产品的名称，写在product一栏，作为结果的第一项
         2. 请基于原文给出你的分析过程，写在analysis一栏，作为结果的第二项
-        3. 请将你认为正确的产品类别的完整名称写在product_category_full_name一栏，作为结果的第三项
+        3. 请从selection_range中选出你认为最符合该产品的类别，将其完整简体中文名称写在product_category_full_name一栏，作为结果的第三项
         4. 最后，请写出selection_range中该名称对应的编码，用字符串格式，写在category_code一栏，作为结果的第四项
         {{
             "product": str

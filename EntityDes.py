@@ -72,7 +72,7 @@ def get_ai_enriched_info(entity_name, label):
                     "country": str,
                     "description": str
                 }}
-                其中，name处请重复我给你的实体名称。如果你认为它不是该实体的正式中文全称，请在full_cn_name处给出其正式中文全称。如果实在没有合适的中文名，可以使用原来语言的正式名称；
+                其中，name处请重复我给你的实体名称。如果你认为它不是该实体的正式中文全称，请在full_cn_name处给出其正式全称尽量使用中文。如果实在没有合适的中文名，也可以使用原来语言的正式名称；
                 在country位置，请用中文给出企业所在国家或地区的中文简称，如“美国”、“日本”、“中国台湾”，“中国大陆”等；
                 在description位置，请用一两句话，介绍该企业，以所属行业、主营业务、商业模式为重点；
                 注意：你提供的信息必须要真实、准确、可靠。
@@ -105,8 +105,9 @@ def validate_ai_response(data, original_name):
     if not all(field in data for field in required_fields):
         raise ValueError("缺少必要字段")
         
-    if data["name"] != original_name:
-        raise ValueError(f"{data['name']}与原来的实体名称{original_name}不匹配")
+    # 让大模型重复一遍name只是怕它出错，并不需要验证
+    # if data["name"] != original_name:
+    #     raise ValueError(f"{data['name']}与原来的实体名称{original_name}不匹配")
         
     return {
         "full_cn_name": data["full_cn_name"],

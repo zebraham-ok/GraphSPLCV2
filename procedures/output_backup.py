@@ -14,7 +14,7 @@ LABEL_PRIORITY = [
 
 NODE_ATTR = ["country"]
 
-EDGE_ATTR = ["product", "product_category"]
+EDGE_ATTR = ["product", "product_category", "status"]
 
 FORBID_VALUE=["N/A","nan",nan]
 

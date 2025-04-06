@@ -13,7 +13,6 @@ supply_net = exporter.export_supply_relations(check_rubbish=False)
 
 
 # 将不同级别的连边分别导出
-
 for edge in supply_net.edges():
     edge_info=supply_net.edges[edge]
     cate_list=edge_info["product_category"].split("-")
