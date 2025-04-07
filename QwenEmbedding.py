@@ -1,4 +1,4 @@
-import API.ai_ask
+# import API.ai_ask
 import API.neo4j_SLPC
 neo4j_host=API.neo4j_SLPC.Neo4jClient(driver=API.neo4j_SLPC.local_driver)
 
@@ -47,7 +47,7 @@ def process_node(record, neo4j_host):
 with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
     while True:
         nodes_to_embed = neo4j_host.execute_query(  # 暂时取消对Section的Embedding
-            "MATCH (n: EntityObj | Article | ProductCategory | Product) WHERE n.qwen_embedding IS NULL RETURN elementId(n) AS id, n.full_name as full_name, n.name as name, n.title as title, n.content as content LIMIT 1000"
+            "MATCH (n: ProductCategory | Product) WHERE n.qwen_embedding IS NULL RETURN elementId(n) AS id, n.full_name as full_name, n.name as name, n.title as title, n.content as content LIMIT 1000"
             # "MATCH (n) WHERE n.qwen_embedding IS NULL RETURN elementId(n) AS id, n.title AS title, n.content AS content LIMIT 1000"
         )
         if len(nodes_to_embed)==0:

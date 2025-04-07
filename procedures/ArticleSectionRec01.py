@@ -4,8 +4,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset, random_split
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve
 
 import os
@@ -130,6 +128,9 @@ def find_optimal_threshold(probas, labels, target_recall=0.95):
         return 0.5  # 默认阈值
 
 if __name__ == "__main__":
+    # import pandas as pd
+    import matplotlib.pyplot as plt
+    
     # 超参数设置
     input_dim = 512
     batch_size = 64

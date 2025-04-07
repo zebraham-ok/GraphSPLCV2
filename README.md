@@ -35,7 +35,7 @@
 + neo4j当中既存Company，也存CompanyName（不带后缀），CompanyName附属于Company而存在，不能具有“Supply”这样的关系
 
 # 主要文件
-+ `SQL2Neo4j.py`：将SQl中的Article导入Neo4j并以Section形式存储。目前已经成功测试了`SectionRec01`，可能会后续用于识别。但如果这意味着需要对拿进数据库的所有Section进行一次判定，这可能会导致一定的算力浪费。因此，在实际使用中我们可能会考虑优先对Article进行判别，仅将得分较高的进行Embedding。
++ `SQL2Neo4j.py`：将SQl中的Article导入Neo4j并以Section形式存储。目前已经成功测试了`SectionRec01`，可能会后续用于识别。但如果这意味着需要对拿进数据库的所有Section进行一次判定，这可能会导致一定的算力浪费。因此，在实际使用中我们可能会考虑优先对Article进行判别，同时考虑其长度问题，优先对于其中得分较高、长度适中的进行Embedding。
 + `refresh_databse_load_time.py`：如果要重新导入，需要先用这个去除SQL中的load_time
 + `QwenEmbedding.py`：通过通义千问v3的512维度模式对Section进行向量化。之后可能会对EntityObj进行相似的操作。目前这个并非必须运行。
 + `NER_RE_Entity.py`：对Entity和EntityObj进行实体识别和关系抽取
