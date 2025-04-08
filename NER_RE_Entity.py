@@ -50,10 +50,40 @@ def ai_entity_recognition(article_title, content):
 
 ALLOWED_ENTITY_TYPES_FOR_ORG={"Company", "Factory", "Government", "MiningSite", "Academic", 'Media', "NGO", "Others", "Factory"}
 ALLOWED_RELATION_TYPES_FOR_ORG={"SupplyProductTo", "OwnFactory", "OwnMiningSite", "PartnerOf", "OfferFianceService", "WinBidFor", "SubsidiaryOf", "GrantTechTo"}
+
+
+def ai_relation_extraction_ORG_gpt(article_title, content, formal_entity_list,                              
+                                   allowed_entity_types=ALLOWED_ENTITY_TYPES_FOR_ORG, 
+                                   allowed_relation_types=ALLOWED_RELATION_TYPES_FOR_ORG, model="gpt-4o"):
+    "用大模型检查一个content当中各个机构之间是否有给定类型的关系"
+    ai_response=API.ai_ask.ask_gpt(prompt_text='''
+            请查看如下文本片段，严格依照原文文本内容，按照如下步骤，结合你检索到的知识完成任务：
+            {"title": %s, "section_content": %s, "entity_list": %s, "allowed_entity_types": %s, "allowed_relation_types": %s}
+            1. 请查看entity_list当中的组织实体，判断他们属于allowed_entity_types中的什么类型的entity_type，仅能从这些类型中选择。判断完成后，在entity_type_dict一栏以字典的形式返回一个dict，给出结果的第一项
+            2. 请判断这些组织实体之间是否存在allowed_entity_types中的关系，如果存在，在relationship_list一栏中以list[dict]的形式，给出结果的第二项。有多少条关系就写多少个，如果没有，则返回一个空列表。请注意识别关系的方向，并在analysing_process一项中写清楚你的推导过程。
+            请以json格式回答问题，格式如下所示：
+            {
+                "entity_type_dict": dict[entity: entity_type],
+                "relationship_list": list[dict["analysing_process": str, "source":entity, "relation_type":relation_type, "target": entity]]
+            }
+            注意，（1）你仅需要识别allowed_relation_types和allowed_entity_types中的信息类型。（2）金融服务属于OfferFianceService，实际生产制造中的上下游之间提供货物，或生产性的服务才属于SupplyProductTo，基于技术专利等知识产权的授权属于GrantTechTo。（3）回答时请严格基于事实，不要臆想
+        '''%(article_title, content, formal_entity_list, allowed_entity_types, allowed_relation_types),
+        system_instruction="你是一个商业信息采集员，擅长用json的标准化格式回答用户的提问",
+        mode="json",
+        # model="qwen-plus",
+        model=model,
+        temperature=0,
+        # enable_search=True
+        )
+    try:
+        return get_dict_from_str(ai_response)
+    except Exception as e:
+        print(e)
+        return {}
     
 def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allowed_entity_types=ALLOWED_ENTITY_TYPES_FOR_ORG, allowed_relation_types=ALLOWED_RELATION_TYPES_FOR_ORG):
     "用大模型检查一个content当中各个机构之间是否有给定类型的关系"
-    ai_response=API.ai_ask.ask_gpt(prompt_text='''
+    ai_response=API.ai_ask.ask_qwen(prompt_text='''
             请查看如下文本片段，严格依照原文文本内容，按照如下步骤，结合你检索到的知识完成任务：
             {"title": %s, "section_content": %s, "entity_list": %s, "allowed_entity_types": %s, "allowed_relation_types": %s}
             1. 请查看entity_list当中的组织实体，判断他们属于allowed_entity_types中的什么类型的entity_type，仅能从这些类型中选择。判断完成后，在entity_type_dict一栏以字典的形式返回一个dict，给出结果的第一项
@@ -67,8 +97,7 @@ def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allow
         '''%(article_title, content, formal_entity_list, allowed_entity_types, allowed_relation_types),
         system_instruction="你是一个商业信息采集员，擅长用json的标准化格式回答用户的提问",
         mode="json",
-        # model="qwen-plus",
-        model="gpt-4o",
+        model="llama-4-maverick-17b-128e-instruct",
         temperature=0,
         # enable_search=True
         )

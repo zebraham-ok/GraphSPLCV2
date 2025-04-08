@@ -10,7 +10,7 @@ import time
 def ai_splc_verify(supplier, customer, s_des, c_des, content, s_produce_list, c_produce_list, s_need_list, c_need_list):
     "进行供应链关系和方向的判断"
     # 这一步需要的中国特有知识较多，因此使用qwen更加准确
-    ai_response=API.ai_ask.ask_gpt(prompt_text=f'''
+    ai_response=API.ai_ask.ask_qwen(prompt_text=f'''
             请查看如下两个实体的信息，以及一个文本片段，请依照原文文本内容，按照如下步骤，推测两个实体之间的供应链关系：
             {{
                 "entity1": "{supplier}", "description1": "{s_des}", 
@@ -41,8 +41,8 @@ def ai_splc_verify(supplier, customer, s_des, c_des, content, s_produce_list, c_
             注意，回答时请严格基于事实，尽可能使用简体中文，按照规定格式
         ''',
             system_instruction="你是一个供应链信息采集员，用json的标准化格式回答用户的提问",
-            # mode="json",
-            model="gpt-4o",
+            mode="json",
+            model="deepseek-r1",
             temperature=0.05,
             # enable_search=True
         )

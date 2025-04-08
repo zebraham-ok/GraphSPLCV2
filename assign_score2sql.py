@@ -44,6 +44,8 @@ def predict_text(embedding, mode, threshold=0.5):
 while True:
     result=sql_host._execute_query(query="select US_id, title from crawler_main where load_time is null and useful is null and content is not null and title is not null limit 1000")
     result_list=result.fetchall()
+    if not result_list:
+        break
     for record in tqdm(result_list):
         us_id, title=record
         if isinstance(title, str):
