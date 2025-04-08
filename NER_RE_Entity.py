@@ -97,7 +97,8 @@ def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allow
         '''%(article_title, content, formal_entity_list, allowed_entity_types, allowed_relation_types),
         system_instruction="你是一个商业信息采集员，擅长用json的标准化格式回答用户的提问",
         mode="json",
-        model="llama-4-maverick-17b-128e-instruct",
+        # model="llama-4-maverick-17b-128e-instruct",
+        model="deepseek-r1-distill-llama-8b",
         temperature=0,
         # enable_search=True
         )
@@ -281,7 +282,7 @@ class SectionProcessor:
                 entity_map, full_name_dict = self.process_entities(section_id, entity_result)
                 # print(full_name_dict)
                 # 关系抽取阶段
-                relation_result = ai_relation_extraction_ORG(
+                relation_result = ai_relation_extraction_ORG_gpt(
                     content, 
                     title, 
                     list(entity_map.keys())
