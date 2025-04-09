@@ -92,7 +92,8 @@ class ProductClassifier:
             system_instruction="你是产品分类专家，熟读分类目录，用JSON格式回答",
             temperature=0.1,
             mode="json",
-            model="qwen-turbo"
+            # model="qwen-turbo"
+            model="deepseek-r1"
         )
         
         try:

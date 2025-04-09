@@ -282,7 +282,7 @@ class SectionProcessor:
                 entity_map, full_name_dict = self.process_entities(section_id, entity_result)
                 # print(full_name_dict)
                 # 关系抽取阶段
-                relation_result = ai_relation_extraction_ORG_gpt(
+                relation_result = ai_relation_extraction_ORG(
                     content, 
                     title, 
                     list(entity_map.keys())

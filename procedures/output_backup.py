@@ -70,8 +70,8 @@ class Neo4jExporter:
         self.node_attr_list=node_attr_list
         self.rel_attr_list=rel_attr_list
 
-    def fetch_relations(self, skip):
-        """线程安全的批次查询"""
+    def fetch_relations(self, skip, start_year=None, end_year=None, year=None):
+        """线程安全的批次查询，融合了限定年份的查询"""
         with self.driver_lock:
             # 构造语句让特定的attr被返回
             s_attr_query=""
@@ -85,9 +85,17 @@ class Neo4jExporter:
                 r_collect_query+=f", COLLECT(r.{attr}) as r_{attr}"
                 r_attr_query+=f", r_{attr}"
             
+            
+            if year:
+                year_argument=f" and r.time contains '{year}'"
+            elif start_year and end_year:
+                year_argument=f" and r.time>'{start_year}' and r.time<'{end_year}' "
+            else:
+                year_argument=""
+            
             return self.neo.execute_query(f"""
                 MATCH (n:EntityObj)-[r:SupplyProductTo]->(m:EntityObj)
-                where n.rubbish <> true and m.rubbish <> true and r.verified <> "suspected"
+                where n.rubbish <> true and m.rubbish <> true and r.verified <> "suspected"{year_argument}
                 WITH n, m, COUNT(r) AS rel_count {r_collect_query}
                 OPTIONAL MATCH (n)-[:FullNameIs]->(n_full)
                 WITH n, m, rel_count{r_attr_query},
@@ -169,7 +177,7 @@ class Neo4jExporter:
         # exporter = Neo4jExporter(neo4j_host)
         
         # 获取总记录数
-        total = self.neo.execute_query("MATCH ()-[r:SupplyProductTo]->() RETURN COUNT(r) AS total")[0]["total"]
+        total = self.neo.execute_query("MATCH ()-[r:SupplyProductTo]->() where r.verified <> 'suspected' RETURN COUNT(r) AS total")[0]["total"]
         builder.pbar = tqdm(total=total, desc="Exporting relations")
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -190,16 +198,73 @@ class Neo4jExporter:
         builder.pbar.close()
         return builder.G
     
-    def adapt_to_export_form(self, G:nx.DiGraph):
-        "将一个网络转化为适合导出的格式"
-        for edge in G.edges:
-            edge_info=G.edges[edge]
-            for attr in self.rel_attr_list:
-                if attr not in edge_info:
-                    edge_info[attr]=""
-                elif isinstance(edge_info[attr], list):
-                    edge_info[attr]=most_frequent(edge_info[attr])
-        return G
+    def export_supply_relations_by_year(self, start_year, end_year, max_workers=20, check_rubbish=False):
+        """
+            导出的主执行函数
+            目前供应链关系还不是很多，还没有使用分批次导出的技巧
+        """
+        
+        all_graphs={}
+        for year in range(int(start_year), int(end_year+1)):
+            builder = GraphBuilder()
+            # 获取总记录数
+            total = self.neo.execute_query(f'''
+                MATCH ()-[r:SupplyProductTo]->()
+                where r.verified <> 'suspected' and r.time contains '{year}'
+                RETURN COUNT(r) AS total''')[0]["total"]
+            builder.pbar = tqdm(total=total, desc=f"Exporting {year} relations")
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                skip = 0
+                futures = []
+                while True:
+                    batch = self.fetch_relations(skip, year=year)
+                    if not batch:
+                        break
+                    # 提交批次任务
+                    futures.append(executor.submit(self.process_batch, batch, builder, check_rubbish))
+                    skip += self.batch_size
+                
+                # 等待所有任务完成
+                for future in futures:
+                    future.result()
+
+            builder.pbar.close()
+            all_graphs[year]=builder.G.copy()
+        return all_graphs
+      
+def adapt_to_export_form(G:nx.DiGraph):
+    "将一个网络转化为适合导出的格式，主要是将列表形式的属性按照各个值出现的频次取其中频次最高的一个"
+    for edge in G.edges:
+        edge_info=G.edges[edge]
+        for attr in EDGE_ATTR:
+            if attr not in edge_info:
+                edge_info[attr]=""
+            elif isinstance(edge_info[attr], list):
+                edge_info[attr]=most_frequent(edge_info[attr])
+                
+    for node in G.nodes:
+        node_info=G.nodes[node]
+        for attr in NODE_ATTR:
+            if attr not in node_info:
+                node_info[attr]=""
+            elif isinstance(node_info[attr], list):
+                node_info[attr]=most_frequent(node_info[attr])
+    return G
+
+def category_4_level(supply_net):
+    "将不同级别的连边分别导出，方便在gephi中进行可视化"
+    for edge in supply_net.edges():
+        edge_info=supply_net.edges[edge]
+        cate_list=edge_info["product_category"].split("-")
+        
+        edge_info["product_category_1"]=cate_list[0] if cate_list else ""
+        edge_info["product_category_2"]="-".join(cate_list[:2]) if len(cate_list)>=2 else edge_info["product_category_1"]
+        edge_info["product_category_3"]="-".join(cate_list[:3]) if len(cate_list)>=3 else edge_info["product_category_2"]
+        edge_info["product_category_4"]=edge_info["product_category"]
+        del edge_info["product_category"]
+        
+    return adapt_to_export_form(supply_net)
 
 def get_subnetwork(G, node_list, n_layers, tree_structure=False):
     """
@@ -277,8 +342,14 @@ def get_subnetwork(G, node_list, n_layers, tree_structure=False):
 
 # 使用示例
 if __name__ == "__main__":
+    import os
+    
     neo_host = neo4j_SLPC.Neo4jClient()
     exporter=Neo4jExporter(neo_host)
-    supply_net = exporter.export_supply_relations(neo_host)
+    G_dict=exporter.export_supply_relations_by_year(start_year=2013, end_year=2019)
     
-    print(f"Final Network: {len(supply_net.nodes())} nodes, {len(supply_net.edges())} edges")
+    output_path=r"result\YearOutput"
+    for year, G in G_dict.items():
+        file_path=os.path.join(output_path, f"{year}.graphml")
+        nx.write_graphml(G, file_path)
+        print(f"Year {year} Network: {len(G.nodes())} nodes, {len(G.edges())} edges")
