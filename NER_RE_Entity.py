@@ -156,7 +156,7 @@ class SectionProcessor:
         result = self.neo4j_host.execute_query('''
             MATCH (s:Section)-[:SectionOf]->(a:Article)
             WHERE s.find_entity IS NULL
-            RETURN elementId(s) AS id, s.content AS content, a.title AS title, a.pageTime as pageTime
+            RETURN elementId(s) AS id, s.content AS content, a.title AS title, a.pageTime as pageTime, a.url as url
             order by rand()
             LIMIT $batch_size''',
             parameters={"batch_size": BATCH_SIZE}
@@ -222,7 +222,7 @@ class SectionProcessor:
                 
         return entity_map, full_name_dict
 
-    def process_relationships(self, relationships, entity_map, section_id, time_stamp=""):
+    def process_relationships(self, relationships, entity_map, section_id, original_content, url, time_stamp=""):
         """处理关系抽取结果"""
         for rel in relationships:
             source_id = entity_map.get(rel["source"])
@@ -234,6 +234,8 @@ class SectionProcessor:
             rel_attr={
                         "reference_section": section_id,
                         "analysing_process": rel.get("analysing_process", ""),
+                        "original_content": original_content,
+                        "url": url,
                         "qwen": True
                     }
             if time_stamp:
@@ -265,6 +267,7 @@ class SectionProcessor:
             content = record["content"]
             title = record["title"]
             pageTime = record["pageTime"]
+            url = record["url"]
             
             time_stamp=""
             if pageTime:
@@ -306,6 +309,8 @@ class SectionProcessor:
                             main_result["relationship_list"],
                             entity_map,
                             section_id,
+                            "《"+title+"》: "+content,
+                            url,
                             time_stamp
                         )
                 

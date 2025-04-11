@@ -234,7 +234,7 @@ class Neo4jExporter:
         return all_graphs
       
 def adapt_to_export_form(G:nx.DiGraph):
-    "将一个网络转化为适合导出的格式，主要是将列表形式的属性按照各个值出现的频次取其中频次最高的一个"
+    "将一个网络转化为适合导出的格式，主要是将列表形式的属性按照各个值出现的频次取其中频次最高的一个，同时保证缺失的属性用空字符串代替"
     for edge in G.edges:
         edge_info=G.edges[edge]
         for attr in EDGE_ATTR:

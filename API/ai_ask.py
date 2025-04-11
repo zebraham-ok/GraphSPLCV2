@@ -37,10 +37,10 @@ current_dir = os.path.dirname(current_file)
 secret_dict=read_secrets_from_csv(filename=os.path.join(current_dir,"secrets.csv"))
 # print(secret_dict)
 openai_key=secret_dict["openai"]
-gemini_key=secret_dict["gemini_cost1"]
-gemini_free_key=secret_dict["gemini_free2"]
+# gemini_key=secret_dict["gemini_cost1"]
+# gemini_free_key=secret_dict["gemini_free2"]
 general_key=secret_dict["general"]
-metaso_key=secret_dict["metaso_key"]
+# metaso_key=secret_dict["metaso_key"]
 
 def find_outer_braces(s): 
     "获取一个字符串中所有的最外层大括号（避免因为没生成完导致缺少反括号]的错误），并直接将他们转化为字典，以list[dict]形式返回"
@@ -206,7 +206,7 @@ def ask_gpt(prompt_text,history=[],system_instruction="",model="gpt-3.5-turbo",m
         
 import mimetypes
 
-def mitaso_upload_file(cfid, file_path, api_key=metaso_key):
+def mitaso_upload_file(cfid, file_path, api_key):
     """
     上传文件到指定的目录ID下。
 

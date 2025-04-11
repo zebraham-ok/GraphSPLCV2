@@ -10,6 +10,7 @@
     + **EntityObj**：Entity的中文正式实体名，最初被`ai_entity_recognition`生成的时候它只有一个名字。之后会在`ai_relation_extraction_ORG`函数的作用下获得`ALLOWED_ENTITY_TYPES_FOR_ORG={"Company", "Factory", "MiningSite", "Government", "Academic", 'Media', "NGO", "Others"}`之一的Label，所以EntityObj大多是有两个Label的。
     + 由大语言模型生成的实体和关系都会获得一个`qwen=True`的标签<br>
 **————上面是实体，下面是关系————**
+    所有的关系中，都会有reference_section, original_content, url来指明其出处
     + **Section**-**SectionOf**->**Article**：被`SQL2Neo4j.py`生成
     + **Section**-**Mention**->**Entity**：（由`SectionNER_RE.py`的`ai_entity_recognition`生成）
     + **Entity**-**FullNameIs**->**EntityObj**：（由`SectionNER_RE.py`的`ai_entity_recognition`生成）
