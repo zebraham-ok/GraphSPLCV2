@@ -185,8 +185,8 @@ class SectionProcessor:
         # 创建基础实体节点
         alias_rubbish_label=check_rubbish(alias)
         base_id = self.neo4j_host.Create_node(
-        # Entity是具有文中独特指代的，不能merge，否则就无法按照Entiy找回EntityObj对应的Section了，这一步也就会失去意义
-            "Entity", {"name": alias, "type": "ORG", "qwen": True, "rubbish": alias_rubbish_label}, merge=False
+        # Entity在文中的merge或许也可以为未来识别出同名词提供参考
+            "Entity", {"name": alias, "type": "ORG", "qwen": True, "rubbish": alias_rubbish_label}, merge=True
         )
         
         # 创建规范实体节点

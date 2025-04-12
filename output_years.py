@@ -6,7 +6,7 @@ from procedures.output_backup import *
 import os
 
 exporter=Neo4jExporter(neo4j_host)
-G_dict=exporter.export_supply_relations_by_year(start_year=2013, end_year=2019)
+G_dict=exporter.export_supply_relations_by_year(start_year=2013, end_year=2021)
 
 output_path=r"result\YearOutput"
 for year, G in G_dict.items():
