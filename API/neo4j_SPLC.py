@@ -409,24 +409,16 @@ class Neo4jClient():
     def find_name_duplicate_nodes(self, database="neo4j"):
         # 查找具有相同Name的节点
         query_name = """
-        MATCH (n:Company|Government|Academy|Industry|Organization|Location|Market|Group)
+        MATCH (n:Entity)
         WHERE n.name IS NOT NULL
         WITH n.name AS name, COLLECT(n) AS nodes
         WHERE SIZE(nodes) > 1
         RETURN nodes
         """
         
-        query_Name = """
-        MATCH (n:Company|Government|Academy|Industry|Organization|Location|Market|Group)
-        WHERE n.Name IS NOT NULL
-        WITH n.Name AS name, COLLECT(n) AS nodes
-        WHERE SIZE(nodes) > 1
-        RETURN nodes
-        """
         duplicate_name_nodes = self.execute_query(query_name, database=database)
-        duplicate_Name_nodes = self.execute_query(query_Name, database=database)
-        
-        return duplicate_name_nodes+duplicate_Name_nodes
+
+        return duplicate_name_nodes
 
     # 查询一个节点的所有连边，并附带连边节点的属性
     def get_node_rel_info_byId(self, node_id, database="neo4j"):
@@ -449,7 +441,7 @@ class Neo4jClient():
             return incoming_result, outgoing_result
 
     # 针对查询到的节点进行合并
-    def merge_duplicate_nodes(self, nodes_to_merge, merge_key='name',database="neo4j"):
+    def merge_duplicate_nodes(self, nodes_to_merge, database="neo4j"):
         for node_group in tqdm(nodes_to_merge):               # merge_key指根据那个属性的值进行合并
             attributes = {}
             all_incoming = []
@@ -479,7 +471,8 @@ class Neo4jClient():
             # 创建新节点
             # new_node_id = attributes[merge_key]  # 使用最短的Id
             used_label="Entity"
-            for label in ["Technology","Factory","Location","CompanyType","CompanyObj","Company","Prodcut","Person","Industry","Event","Market","Service","Organization","Name","Entity"]:  # 优先级方案应该有所调整，改为少数服从多数方案！！！
+            for label in ["Technology","Factory","Location","CompanyType","CompanyObj","Company","Prodcut","Person","Industry","Event","Market","Service","Organization","Name","Entity"]:
+                # 优先级方案应该有所调整，改为少数服从多数方案！！！
                 if label in nodes_label_set:
                     used_label=label
                     break

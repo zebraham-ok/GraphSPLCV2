@@ -1,6 +1,6 @@
 import API.ai_ask
-import API.neo4j_SLPC
-neo4j_host=API.neo4j_SLPC.Neo4jClient(driver=API.neo4j_SLPC.local_driver)
+import API.neo4j_SPLC
+neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
 
 from tqdm import tqdm
 
@@ -14,7 +14,7 @@ sql_host=API.SQL_SPLC.generate_sql_host(database="splc")
 # 这个是从的新的crawler_main中执行导入
 import concurrent.futures
 
-def process_article_record(record, neo4j_host: API.neo4j_SLPC.Neo4jClient, spliter):
+def process_article_record(record, neo4j_host: API.neo4j_SPLC.Neo4jClient, spliter):
     "引入了判别模型"
     sql_us_id,item,title,content,language,page_date = record
     if isinstance(content, str):

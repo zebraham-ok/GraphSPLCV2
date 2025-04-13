@@ -38,8 +38,8 @@ def process_batch(neo4j_host, records):
     return results
 
 if __name__ == "__main__":
-    import API.neo4j_SLPC
-    neo4j_host = API.neo4j_SLPC.Neo4jClient()
+    import API.neo4j_SPLC
+    neo4j_host = API.neo4j_SPLC.Neo4jClient()
     
     skip = 0
     limit = 1000  # 每批处理量

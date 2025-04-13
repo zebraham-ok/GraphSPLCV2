@@ -1,6 +1,6 @@
 "按年份分别导出网络"
-import API.neo4j_SLPC
-neo4j_host=API.neo4j_SLPC.Neo4jClient(driver=API.neo4j_SLPC.local_driver)
+import API.neo4j_SPLC
+neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
 
 from procedures.output_backup import *
 import os

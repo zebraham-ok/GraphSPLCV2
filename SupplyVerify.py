@@ -1,8 +1,8 @@
 
 import API.ai_ask
-import API.neo4j_SLPC
+import API.neo4j_SPLC
 from text_process.find_json import get_dict_from_str
-neo4j_host=API.neo4j_SLPC.Neo4jClient()
+neo4j_host=API.neo4j_SPLC.Neo4jClient()
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 import time
@@ -51,7 +51,7 @@ def ai_splc_verify(supplier, customer, s_des, c_des, content, s_produce_list, c_
 
 class Neo4jHandler:
     def __init__(self):
-        self.client = API.neo4j_SLPC.Neo4jClient()
+        self.client = API.neo4j_SPLC.Neo4jClient()
         
     def fetch_records(self, batch_size=50):
         """获取未验证的供应链关系记录"""

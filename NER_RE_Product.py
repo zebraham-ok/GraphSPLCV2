@@ -2,10 +2,10 @@
 from tqdm import tqdm
 import json
 import API.ai_ask
-import API.neo4j_SLPC
+import API.neo4j_SPLC
 import time
 
-neo4j_host=API.neo4j_SLPC.Neo4jClient(driver=API.neo4j_SLPC.local_driver)
+neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
 import concurrent.futures
 
 def ai_product_recognition(article_title, section_content, entity_obj_name):

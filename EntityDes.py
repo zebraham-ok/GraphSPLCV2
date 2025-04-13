@@ -6,9 +6,9 @@
 import json
 import time
 import API.ai_ask
-import API.neo4j_SLPC
+import API.neo4j_SPLC
 
-def entity_enrichment_module(neo4j_host: API.neo4j_SLPC.Neo4jClient, batch_size=50, max_workers=4):
+def entity_enrichment_module(neo4j_host: API.neo4j_SPLC.Neo4jClient, batch_size=50, max_workers=4):
     """实体信息增强模块"""
     # 获取需要处理的实体批次
     entity_batch = get_high_degree_entities(neo4j_host, batch_size)
@@ -131,7 +131,7 @@ def update_node_properties(neo4j_host, entity_id, ai_info):
         "description": ai_info["description"]
     })
 
-def handle_same_entity_relation(neo4j_host: API.neo4j_SLPC.Neo4jClient, source_id, full_cn_name):
+def handle_same_entity_relation(neo4j_host: API.neo4j_SPLC.Neo4jClient, source_id, full_cn_name):
     """处理疑似相同实体关系"""
     # 查找目标节点
     target_node = neo4j_host.execute_query('''
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from concurrent.futures import ThreadPoolExecutor, as_completed
     
-    neo4j_host = API.neo4j_SLPC.Neo4jClient(driver=API.neo4j_SLPC.local_driver)
+    neo4j_host = API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
     while True:
         entity_enrichment_module(neo4j_host, batch_size=1000)
         print("当前全部描述已生成，休眠十分钟")

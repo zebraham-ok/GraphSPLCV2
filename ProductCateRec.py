@@ -2,7 +2,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import API.ai_ask
-import API.neo4j_SLPC
+import API.neo4j_SPLC
 from API.ai_ask import get_qwen_embedding, ask_qwen
 import time
 
@@ -10,7 +10,7 @@ EMPTY_SLEEP=600
 
 class ProductClassifier:
     def __init__(self):
-        self.neo4j = API.neo4j_SLPC.Neo4jClient(driver=API.neo4j_SLPC.local_driver)
+        self.neo4j = API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
         self.batch_size = 100
         self.max_workers = 8  # 根据实际CPU核心数调整
 

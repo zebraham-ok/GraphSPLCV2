@@ -3,7 +3,7 @@ import networkx as nx
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
-from API import neo4j_SLPC
+from API import neo4j_SPLC
 from collections import Counter
 from numpy import nan
 
@@ -63,7 +63,7 @@ class GraphBuilder:
         return ""
 
 class Neo4jExporter:
-    def __init__(self, neo4j_host:neo4j_SLPC.Neo4jClient, node_attr_list=NODE_ATTR, rel_attr_list=EDGE_ATTR):
+    def __init__(self, neo4j_host:neo4j_SPLC.Neo4jClient, node_attr_list=NODE_ATTR, rel_attr_list=EDGE_ATTR):
         self.neo = neo4j_host
         self.batch_size = 500
         self.driver_lock = Lock()
@@ -344,7 +344,7 @@ def get_subnetwork(G, node_list, n_layers, tree_structure=False):
 if __name__ == "__main__":
     import os
     
-    neo_host = neo4j_SLPC.Neo4jClient()
+    neo_host = neo4j_SPLC.Neo4jClient()
     exporter=Neo4jExporter(neo_host)
     G_dict=exporter.export_supply_relations_by_year(start_year=2013, end_year=2019)
     

@@ -4,12 +4,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import json
 import API.ai_ask
-import API.neo4j_SLPC
+import API.neo4j_SPLC
 from procedures.check_rubbish import check_rubbish
 from text_process.find_json import get_dict_from_str
 from text_process.timeStamp import parse_date
 
-neo4j_host=API.neo4j_SLPC.Neo4jClient(driver=API.neo4j_SLPC.local_driver)
+neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
 
 from text_process.chunks import text_splitter_zh_en
 spliter=text_splitter_zh_en(zh_max_len=256, en_max_len=512, overlap_ratio=0.2)
@@ -139,7 +139,7 @@ SET s.find_entity = true
 """
 
 class SectionProcessor:
-    def __init__(self, neo4j_host: API.neo4j_SLPC.Neo4jClient):
+    def __init__(self, neo4j_host: API.neo4j_SPLC.Neo4jClient):
         self.neo4j_host = neo4j_host
         self.executor = ThreadPoolExecutor(max_workers=WORKER_THREADS)
 
