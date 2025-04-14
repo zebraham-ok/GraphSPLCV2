@@ -1,7 +1,5 @@
 # import API.ai_ask
 import API.neo4j_SPLC
-neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
-
 # from collections import Counter
 from tqdm import tqdm
 
@@ -44,21 +42,24 @@ def process_node(record, neo4j_host):
     )
 
 
-with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-    while True:
-        nodes_to_embed = neo4j_host.execute_query(  # 暂时取消对Section的Embedding
-            "MATCH (n: ProductCategory | Product) WHERE n.qwen_embedding IS NULL RETURN elementId(n) AS id, n.full_name as full_name, n.name as name, n.title as title, n.content as content LIMIT 1000"
-            # "MATCH (n) WHERE n.qwen_embedding IS NULL RETURN elementId(n) AS id, n.title AS title, n.content AS content LIMIT 1000"
-        )
-        if len(nodes_to_embed)==0:
-            time.sleep(60*15)
-            print("嵌入全部完成")
-            
+def qwen_embedding_main(neo4j_host=None, max_worker=MAX_WORKERS):
+    if not neo4j_host:
+        neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
         
-        # 使用as_completed确保按完成顺序处理
-        futures = {executor.submit(process_node, record, neo4j_host): record for record in nodes_to_embed}
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
-            try:
-                future.result()  # 检查是否有异常抛出
-            except Exception as e:
-                print(f"Generated an exception: {e}")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
+        while True:
+            nodes_to_embed = neo4j_host.execute_query(  # 暂时取消对Section的Embedding
+                "MATCH (n: ProductCategory | Product) WHERE n.qwen_embedding IS NULL RETURN elementId(n) AS id, n.full_name as full_name, n.name as name, n.title as title, n.content as content LIMIT 1000"
+                # "MATCH (n) WHERE n.qwen_embedding IS NULL RETURN elementId(n) AS id, n.title AS title, n.content AS content LIMIT 1000"
+            )
+            if len(nodes_to_embed)==0:
+                time.sleep(60*15)
+                print("嵌入全部完成")
+            
+            # 使用as_completed确保按完成顺序处理
+            futures = {executor.submit(process_node, record, neo4j_host): record for record in nodes_to_embed}
+            for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Embedding"):
+                try:
+                    future.result()  # 检查是否有异常抛出
+                except Exception as e:
+                    print(f"Generated an exception: {e}")

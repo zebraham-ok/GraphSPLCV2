@@ -7,6 +7,8 @@ import json
 import time
 import API.ai_ask
 import API.neo4j_SPLC
+from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def entity_enrichment_module(neo4j_host: API.neo4j_SPLC.Neo4jClient, batch_size=50, max_workers=4):
     """实体信息增强模块"""
@@ -142,13 +144,16 @@ def handle_same_entity_relation(neo4j_host: API.neo4j_SPLC.Neo4jClient, source_i
     if target_node:
         neo4j_host.Crt_rel_by_id(source_id, target_node[0]["id"], relationship_type="FullNameIs")
 
-# 使用示例
-if __name__ == "__main__":
-    from tqdm import tqdm
-    from concurrent.futures import ThreadPoolExecutor, as_completed
+def entity_des_main(neo4j_host=None, max_worker=2):
+    "为实体生成描述"
+    if not neo4j_host:
+        neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
     
-    neo4j_host = API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
     while True:
-        entity_enrichment_module(neo4j_host, batch_size=1000)
+        entity_enrichment_module(neo4j_host, batch_size=1000, max_workers=max_worker)
         print("当前全部描述已生成，休眠十分钟")
         time.sleep(600)
+        
+# 使用示例
+if __name__ == "__main__":
+    entity_des_main()

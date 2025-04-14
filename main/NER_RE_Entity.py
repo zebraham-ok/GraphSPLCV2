@@ -9,7 +9,7 @@ from procedures.check_rubbish import check_rubbish
 from text_process.find_json import get_dict_from_str
 from text_process.timeStamp import parse_date
 
-neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
+# neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
 
 from text_process.chunks import text_splitter_zh_en
 spliter=text_splitter_zh_en(zh_max_len=256, en_max_len=512, overlap_ratio=0.2)
@@ -345,13 +345,21 @@ class SectionProcessor:
                 # break
             
             # 使用进度条监控
-            with tqdm(total=len(futures), desc="处理章节") as pbar:
+            with tqdm(total=len(futures), desc="实体关系抽取") as pbar:
                 for _ in as_completed(futures):
                     pbar.update(1)
                     
             # break
 
+def ner_re_entity_main(neo4j_host=None):
+    "进行初步实体关系抽取"
+    if neo4j_host:
+        processor = SectionProcessor(neo4j_host)
+    else:
+        processor = SectionProcessor(API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver))
+    processor.run_processing_loop()
+
 # 使用示例
 if __name__ == "__main__":
-    processor = SectionProcessor(neo4j_host=neo4j_host)
+    processor = SectionProcessor(neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver))
     processor.run_processing_loop()

@@ -1,7 +1,8 @@
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from text_process.find_json import get_dict_from_str
 from tqdm import tqdm
-import API.ai_ask
+# import API.ai_ask
 import API.neo4j_SPLC
 from API.ai_ask import get_qwen_embedding, ask_qwen
 import time
@@ -9,10 +10,10 @@ import time
 EMPTY_SLEEP=600
 
 class ProductClassifier:
-    def __init__(self):
-        self.neo4j = API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
+    def __init__(self, max_workers=15, neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)):
+        self.neo4j = neo4j_host
         self.batch_size = 100
-        self.max_workers = 8  # 根据实际CPU核心数调整
+        self.max_workers = max_workers  # 根据实际CPU核心数调整
 
     def fetch_unclassified_products(self):
         """获取未分类的产品记录"""
@@ -97,9 +98,13 @@ class ProductClassifier:
         )
         
         try:
-            return json.loads(response)
+            list_of_dict=get_dict_from_str(response)
+            if list_of_dict:
+                return list_of_dict[0]
+            else:
+                print(f"AI响应解析失败：{response}")
         except json.JSONDecodeError:
-            print("AI响应解析失败")
+            print(f"AI响应解析失败：{response}")
             return None
 
     def build_prompt(self, p_name, selection_dict, content):
@@ -176,6 +181,10 @@ class ProductClassifier:
                         finally:
                             pbar.update(1)
 
-if __name__ == "__main__":
-    classifier = ProductClassifier()
+def product_cate_rec_main(neo4j_host=None, max_workers=15):
+    "进行产品识别的主函数（这个一般在关系验证之后）"
+    if neo4j_host:
+        classifier = ProductClassifier(max_workers, neo4j_host)
+    else:
+        classifier = ProductClassifier(max_workers)
     classifier.run()

@@ -2,7 +2,7 @@
 import API.ai_ask
 import API.neo4j_SPLC
 from text_process.find_json import get_dict_from_str
-neo4j_host=API.neo4j_SPLC.Neo4jClient()
+# neo4j_host=API.neo4j_SPLC.Neo4jClient()
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 import time
@@ -50,8 +50,8 @@ def ai_splc_verify(supplier, customer, s_des, c_des, content, s_produce_list, c_
 
 
 class Neo4jHandler:
-    def __init__(self):
-        self.client = API.neo4j_SPLC.Neo4jClient()
+    def __init__(self, neo4j_host=API.neo4j_SPLC.Neo4jClient()):
+        self.client = neo4j_host
         
     def fetch_records(self, batch_size=50):
         """获取未验证的供应链关系记录"""
@@ -128,6 +128,8 @@ def process_record(record, neo_handler: Neo4jHandler):
             record['s_des'], record['c_des'], record['content'],
             s_info['produce'], c_info['produce'], s_info['need'], c_info['need']
         )[0]
+        
+        # print(ai_result)
 
         # 处理验证结果
         if not ai_result.get('exist_relationship', False):
@@ -163,9 +165,14 @@ def process_record(record, neo_handler: Neo4jHandler):
     except Exception as e:
         print(f"处理记录{record.get('r_id','')}时出错: {str(e)}")
 
-def main():
-    neo_handler = Neo4jHandler()
-    with ThreadPoolExecutor(max_workers=20) as executor:
+def supply_verify_main(neo4j_host=None, max_workers=15):
+    "进行关系验证和关系中的具体信息提取，默认用local，但是也可以单独指定"
+    if neo4j_host:
+        neo_handler = Neo4jHandler(neo4j_host)
+    else:
+        neo_handler = Neo4jHandler()
+        
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         while True:
             records = neo_handler.fetch_records()
             if not records:
@@ -173,7 +180,7 @@ def main():
                 time.sleep(600)
             
             # 创建进度条
-            with tqdm(total=len(records), desc="处理进度", unit="条") as pbar:
+            with tqdm(total=len(records), desc="处理关系验证", unit="条") as pbar:
                 # 提交任务并添加完成回调
                 futures = []
                 for record in records:
@@ -186,4 +193,4 @@ def main():
                     future.result()
 
 if __name__ == "__main__":
-    main()
+    supply_verify_main()

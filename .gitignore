@@ -50,6 +50,7 @@ Thumbs.db
 *.cache
 test.py
 test.ipynb
+Neo4jHost.py
 
 # 环境配置文件（如敏感信息）
 .env

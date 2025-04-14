@@ -1,6 +1,6 @@
-import API.ai_ask
+# import API.ai_ask
 import API.neo4j_SPLC
-neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
+# neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
 
 from tqdm import tqdm
 
@@ -68,14 +68,18 @@ def process_article_record(record, neo4j_host: API.neo4j_SPLC.Neo4jClient, split
         WHERE `US_id` = :sql_us_id; ''',
         params={"sql_us_id":sql_us_id})
 
-while True:
-    # print(f"The offset now is {offset}")
-    # 结合文章的长度、prob来综合判断是否要导入这个文章
-    result=sql_host._execute_query(query="select US_id,item,title,content,language,page_date from crawler_main where load_time is null and content is not null and content_len<20000 order by useful desc limit 1000")
-    result_list=result.fetchall()
-    if len(result_list)==0:
-        break
+def sql2neo4j_main(neo4j_host=None, max_workers=15):
+    "将sql中的信息导入neo4j当中"
+    if not neo4j_host:
+        neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
+    while True:
+        # print(f"The offset now is {offset}")
+        # 结合文章的长度、prob来综合判断是否要导入这个文章
+        result=sql_host._execute_query(query="select US_id,item,title,content,language,page_date from crawler_main where load_time is null and content is not null and content_len<20000 order by useful desc limit 1000")
+        result_list=result.fetchall()
+        if len(result_list)==0:
+            break
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
-        list(tqdm(executor.map(lambda record: process_article_record(record, neo4j_host, spliter), result_list), total=len(result_list)))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            list(tqdm(executor.map(lambda record: process_article_record(record, neo4j_host, spliter), result_list), total=len(result_list), desc="文本导入Neo4j"))
     # break

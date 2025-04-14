@@ -5,7 +5,6 @@ import API.ai_ask
 import API.neo4j_SPLC
 import time
 
-neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
 import concurrent.futures
 
 def ai_product_recognition(article_title, section_content, entity_obj_name):
@@ -88,35 +87,40 @@ def process_record(record, neo4j_host):
         parameters={"section_id": section_id}
     )
 
-while True:
-    record_list = neo4j_host.execute_query('''
-        MATCH (s:Section) WHERE s.len > 100 and s.find_product is null
-        WITH s order by rand() limit 2000
-        MATCH (a:Article)<-[:SectionOf]-(s)-[:Mention]->(e:Entity)
-        WITH a, s, e
-        MATCH (e)-[:FullNameIs]->(eo:EntityObj)-[:SupplyProductTo]-()
-        WITH a, s, e, COLLECT(eo)[0] AS single_eo 
-        RETURN 
-            COLLECT(single_eo.name) AS entity_obj_name,
-            COLLECT(elementId(single_eo)) AS entity_obj_id,
-            elementid(s) AS id,
-            s.content AS content,
-            a.title AS title
-    ''')
-    
-    # print(record_list)
-    if len(record_list)==0:
-        print("没有需要处理的Section 休眠十分钟")
-        time.sleep(600)
-
-    # 使用線程池並行處理
-    with concurrent.futures.ThreadPoolExecutor(max_workers=24) as executor:  # 可調整worker數量
-        futures = [executor.submit(process_record, record, neo4j_host) for record in record_list]
+def ner_re_product_main(neo4_host=None, max_worker=10):
+    "进行产品实体识别（仅识别存在供应关系的实体所关联的产品）"
+    if not neo4_host:
+        neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
         
-        # 可選：添加進度條顯示
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
-            try:
-                future.result()  # 顯式獲取結果以捕捉異常
-            except Exception as e:
-                print(f"Error processing record: {e}")
-                
+    while True:
+        record_list = neo4j_host.execute_query('''
+            MATCH (s:Section) WHERE s.len > 100 and s.find_product is null
+            WITH s order by rand() limit 2000
+            MATCH (a:Article)<-[:SectionOf]-(s)-[:Mention]->(e:Entity)
+            WITH a, s, e
+            MATCH (e)-[:FullNameIs]->(eo:EntityObj)-[:SupplyProductTo]-()
+            WITH a, s, e, COLLECT(eo)[0] AS single_eo 
+            RETURN 
+                COLLECT(single_eo.name) AS entity_obj_name,
+                COLLECT(elementId(single_eo)) AS entity_obj_id,
+                elementid(s) AS id,
+                s.content AS content,
+                a.title AS title
+        ''')
+        
+        # print(record_list)
+        if len(record_list)==0:
+            print("没有需要处理的Section 休眠十分钟")
+            time.sleep(600)
+
+        # 使用線程池並行處理
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:  # 可調整worker數量
+            futures = [executor.submit(process_record, record, neo4j_host) for record in record_list]
+            
+            # 可選：添加進度條顯示
+            for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="产品抽取"):
+                try:
+                    future.result()  # 顯式獲取結果以捕捉異常
+                except Exception as e:
+                    print(f"Error processing record: {e}")
+                    
