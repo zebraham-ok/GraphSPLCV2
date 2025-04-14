@@ -51,6 +51,8 @@ def process_single_entity(neo4j_host, entity_data):
     # 获取AI增强信息
     ai_info = get_ai_enriched_info(entity_name, primary_label)
     if not ai_info:
+        # 对于无法生成描述的实体进行标记，免得每次都要重新处理一遍
+        neo4j_host.execute_query("match (n:EntityObj) where elementid(n)=$id set n.description=false", parameters={"id": entity_id})
         return
     
     # 更新节点属性
@@ -89,6 +91,7 @@ def get_ai_enriched_info(entity_name, label):
             )
             
             if not response:
+                print(f"description for {entity_name} generation failed")
                 return None
                 
             return validate_ai_response(json.loads(response), entity_name)
