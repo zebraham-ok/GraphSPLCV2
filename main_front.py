@@ -18,12 +18,13 @@ def main_end():
         future1 = executor.submit(ner_re_entity_main, neo4j_host, 15)
         future2 = executor.submit(entity_des_main, neo4j_host, 2)
         future3 = executor.submit(sql2neo4j_main, neo4j_host, 10)
-        future3 = executor.submit(qwen_embedding_main, neo4j_host, 5)
+        future4 = executor.submit(qwen_embedding_main, neo4j_host, 5)
         
         # 等待两个任务完成（可选）
         future1.result()
         future2.result()
         future3.result()
+        future4.result()
 
 if __name__ == "__main__":
     main_end()
