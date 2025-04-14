@@ -139,9 +139,9 @@ SET s.find_entity = true
 """
 
 class SectionProcessor:
-    def __init__(self, neo4j_host: API.neo4j_SPLC.Neo4jClient):
+    def __init__(self, neo4j_host: API.neo4j_SPLC.Neo4jClient, max_worker=WORKER_THREADS):
         self.neo4j_host = neo4j_host
-        self.executor = ThreadPoolExecutor(max_workers=WORKER_THREADS)
+        self.executor = ThreadPoolExecutor(max_workers=max_worker)
 
     def fetch_unprocessed_sections(self):
         """获取未处理的章节数据"""
@@ -351,12 +351,12 @@ class SectionProcessor:
                     
             # break
 
-def ner_re_entity_main(neo4j_host=None):
+def ner_re_entity_main(neo4j_host=None, max_worker=10):
     "进行初步实体关系抽取"
     if neo4j_host:
-        processor = SectionProcessor(neo4j_host)
+        processor = SectionProcessor(neo4j_host, max_worker=max_worker)
     else:
-        processor = SectionProcessor(API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver))
+        processor = SectionProcessor(API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver), max_worker=max_worker)
     processor.run_processing_loop()
 
 # 使用示例
