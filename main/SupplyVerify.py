@@ -76,7 +76,7 @@ class Neo4jHandler:
         query = '''
         MATCH ()-[r]->()
         WHERE elementid(r)=$r_id
-        SET r.verified=$verified, r.analysing_process=$process, 
+        SET r.verified=$verified, r.analysing_process=$analysing_process, 
             r.status=$status, r.product=$product, r.amount=$amount, 
             r.amount_unit=$amount_unit, r.value=$value, r.value_unit=$value_unit'''
         self.client.execute_query(query, parameters={
@@ -146,7 +146,7 @@ def process_record(record, neo_handler: Neo4jHandler):
         # 构建属性字典
         attrs = {
             'verified': True,
-            'process': ai_result.get('analysing_process', ''),
+            'analysing_process': ai_result.get('analysing_process', ''),
             'status': ai_result.get('status', ''),
             'product': ai_result.get('product', ''),
             'amount': ai_result.get('amount', ''),
