@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 def main_end():
     # 使用线程池并行运行两个函数
     with ThreadPoolExecutor(max_workers=2) as executor:
-        future1 = executor.submit(supply_verify_main, get_reomte_driver(), 10)
+        future1 = executor.submit(supply_verify_main, get_reomte_driver(), 15)
         future2 = executor.submit(product_cate_rec_main, get_reomte_driver(), 10)
         
         # 等待两个任务完成（可选）

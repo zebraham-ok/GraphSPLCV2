@@ -64,7 +64,9 @@
 # 配置说明
 + 原来使用的版本是5.19，现在最新的版本是5.24。社区版下载地址：https://neo4j.com/deployment-center/#community
 + 这里有一个旧版下载的地址：https://we-yun.com/doc/neo4j/
-+ 必须使用APOC插件，下载地址：https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases
++ 必须使用APOC插件，下载地址：
+    + http://doc.we-yun.com:1008/doc/neo4j-apoc/5.4.0/
+    + https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases
 + 理论上来说，这个插件只要放在Neo4j的plugin文件夹下就能运行。目前打包了一个`SPLC_Database包含了plugin.zip`是可以解压即用的。
 + 与Neo4j最合适的Java版本是JDK21：https://www.oracle.com/java/technologies/downloads/#jdk21-windows
 + 目前使用的Neo4j路径：E:\Coding\Neo4j\SPLC_Database
