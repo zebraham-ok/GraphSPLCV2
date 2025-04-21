@@ -43,7 +43,6 @@ class Neo4jClient():
                 else:
                     print(f"Error! All {max_retries} attempts failed. Raising the exception.")
 
-
     def Create_node(self, label, attributes, database="neo4j", merge=True, set_date=False):
         "这里使用的是MERGE方法，即：只有在新节点与旧节点完全不冲突的时候，才会合并，否则就会新创建一个同名不同属性的节点"
         

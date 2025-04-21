@@ -55,14 +55,24 @@ class Neo4jHandler:
         
     def fetch_records(self, batch_size=50):
         """获取未验证的供应链关系记录"""
+        # query = '''
+        # MATCH (n)-[r:SupplyProductTo]->(m), (s:Section)
+        # WHERE r.verified IS NULL AND elementid(s)=r.reference_section
+        # RETURN 
+        #     n.name AS supplier, elementid(n) AS s_id, n.description AS s_des,
+        #     m.name AS customer, elementid(m) AS c_id, m.description AS c_des,
+        #     s.content AS content, elementid(r) AS r_id
+        # LIMIT $limit'''
+        
         query = '''
-        MATCH (n)-[r:SupplyProductTo]->(m), (s:Section)
-        WHERE r.verified IS NULL AND elementid(s)=r.reference_section
+        MATCH (n)-[r:SupplyProductTo]->(m)
+        WHERE r.verified IS NULL AND r.original_content is not null
         RETURN 
             n.name AS supplier, elementid(n) AS s_id, n.description AS s_des,
             m.name AS customer, elementid(m) AS c_id, m.description AS c_des,
-            s.content AS content, elementid(r) AS r_id
+            r.original_content AS content, elementid(r) AS r_id
         LIMIT $limit'''
+        
         return self.client.execute_query(query, parameters={'limit': batch_size})
     
     def get_products(self, entity_id, rel_type):

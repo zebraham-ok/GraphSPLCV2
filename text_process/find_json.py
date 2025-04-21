@@ -65,3 +65,30 @@ def get_dict_from_str(s):
     "真正有用的函数，返回[dict, dict...]"
     outer_braces_list=_find_outer_braces(s)
     return _process_json_response(outer_braces_list)
+
+def read_jsonl_to_list(file_path: str):
+    """
+    读取 JSONL 文件并将其解析为一个包含字典的列表。
+
+    参数:
+        file_path (str): JSONL 文件的路径。
+
+    返回:
+        list[dict]: 每一行的 JSON 对象被解析为字典，并存储在列表中。
+    """
+    data_list = []
+    
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            for line in f:
+                # 去除行尾换行符并解析 JSON
+                data = json.loads(line.strip())
+                data_list.append(data)
+    except FileNotFoundError:
+        print(f"文件未找到: {file_path}")
+    except json.JSONDecodeError as e:
+        print(f"JSON 解码错误: {e}")
+    except Exception as e:
+        print(f"发生未知错误: {e}")
+    
+    return data_list

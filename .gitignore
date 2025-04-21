@@ -48,6 +48,7 @@ Thumbs.db
 *.log
 *.tmp
 *.cache
+*.docx
 test.py
 test.ipynb
 Neo4jHost.py

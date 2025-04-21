@@ -106,7 +106,7 @@ class MySQLClient:
         query = f"SELECT * FROM {table_name}"
         result_proxy = self._execute_query(query)
         return pd.DataFrame(result_proxy.fetchall(), columns=result_proxy.keys())
-
+    
     def create_table_from_dict(self, table_name, dict_data):
         """
         如果表已经存在，会给出提示；如果表不存在，创建一个包含 key 和 value 两列的新表，然后插入数据。
@@ -285,7 +285,7 @@ class MySQLClient:
     
     def batch_update_column(self, table, column, value, pk_column, batch_size=1000, where_clause=None, timeout=30, retries=1):
         """
-        分批次更新表中指定列的值（MySQL专用改进版）
+        分批次更新表中指定列的值（MySQL专用改进版），增加进度显示功能
         
         参数说明：
         table - 表名
@@ -298,6 +298,24 @@ class MySQLClient:
         max_pk = None
         total_updated = 0
         params_dict = {}
+
+        # 查询总行数
+        conditions_for_count = []
+        if where_clause:
+            conditions_for_count.append(where_clause)
+        count_sql = f"""
+            SELECT COUNT(*)
+            FROM {table}
+            {f'WHERE {" AND ".join(conditions_for_count)}' if conditions_for_count else ""}
+        """
+        total_rows_result = self._execute_query(count_sql, params_dict or None, timeout, retries)
+        total_rows = total_rows_result.scalar()
+        
+        if total_rows == 0:
+            print("没有需要更新的数据")
+            return 0
+
+        print(f"总共需要更新 {total_rows} 行数据")
 
         while True:
             # 构建条件表达式
@@ -321,11 +339,18 @@ class MySQLClient:
                 ORDER BY {pk_column}
                 LIMIT {batch_size}
             """
-            print("修改执行中: ",update_sql)
+            
+            if total_updated == 0:
+                print("修改执行中: ", update_sql)
+                
             # 执行批量更新
             result = self._execute_query(update_sql, params_dict or None, timeout, retries)
             affected_rows = result.rowcount
             total_updated += affected_rows
+
+            # 计算并显示进度
+            progress = (total_updated / total_rows) * 100
+            print(f"进度: {total_updated}/{total_rows} ({progress:.2f}%)")
 
             if affected_rows == 0:
                 break
