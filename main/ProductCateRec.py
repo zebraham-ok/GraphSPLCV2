@@ -94,7 +94,8 @@ class ProductClassifier:
             temperature=0.1,
             mode="json",
             # model="qwen-turbo"
-            model="deepseek-r1"
+            model="deepseek-v3"
+            # model="deepseek-r1"
         )
         
         try:
