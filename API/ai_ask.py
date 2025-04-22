@@ -143,8 +143,20 @@ def get_qwen_embedding(
     except Exception as e:
         print(f"Error generating embedding: {e}")
         return None
+    
+def ask_qwen_with_gpt_backup(prompt_text,history=[],system_instruction="",model="qwen-turbo",mode="str",temperature=0, enable_search=False, enable_citaton=False, retry_model="gpt-4o"):
+    "优先使用Qwen，如果没有返回结果就问OpenAI"
+    qwen_result=ask_qwen(prompt_text, history, system_instruction, model, mode, temperature, enable_search, enable_citaton)
+    if qwen_result:
+        return qwen_result
+    else:
+        gpt_result=ask_gpt(prompt_text=prompt_text, history=history, system_instruction=system_instruction, model=retry_model, mode="json", temperature=temperature)
+        if gpt_result:
+            print(f"Retried successful with {retry_model}")
+            return gpt_result
 
 def ask_qwen(prompt_text,history=[],system_instruction="",model="qwen-turbo",mode="str",temperature=0, enable_search=False, enable_citaton=False):
+    "直接返回字符串"
     if mode=="json":
         response_format={ "type": "json_object" }
     else:
@@ -174,9 +186,9 @@ def ask_qwen(prompt_text,history=[],system_instruction="",model="qwen-turbo",mod
         if completion.choices:
             return completion.choices[0].message.content
         else:
-            print("GPT no reply")
+            print("Qwen no reply")
     except Exception as e:
-        print(f"gpt error {e}")
+        print(f"Qwen error {e}")
 
 gpt_client =openai.OpenAI(base_url="https://api.wlai.vip/v1",api_key=general_key,timeout=60)
 def ask_gpt(prompt_text,history=[],system_instruction="",model="gpt-3.5-turbo",mode="json",temperature=0):

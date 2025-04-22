@@ -82,7 +82,7 @@ def get_ai_enriched_info(entity_name, label):
                 注意：你提供的信息必须要真实、准确、可靠。
             '''
             
-            response = API.ai_ask.ask_qwen(
+            response = API.ai_ask.ask_qwen_with_gpt_backup(
                 prompt_text=prompt_text,
                 system_instruction="你是一个商业信息情报员，提供json格式的准确结构化数据",
                 temperature=0.05,

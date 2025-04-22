@@ -17,7 +17,7 @@ spliter=text_splitter_zh_en(zh_max_len=256, en_max_len=512, overlap_ratio=0.2)
 def ai_entity_recognition(article_title, content):
     "用大模型直接确认原文中的实体，分析这些实体是否是具体的，并给出它们的正式中文名称"
     # 这一步需要的中国特有知识较多，因此使用qwen更加准确
-    ai_response=API.ai_ask.ask_qwen(prompt_text='''
+    ai_response=API.ai_ask.ask_qwen_with_gpt_backup(prompt_text='''
             请查看如下文本片段，严格依照原文文本内容，按照如下步骤，结合你检索到的知识完成任务：
             {"title": %s, "section_content": %s}
             1. 请在文中找出所有的组织实体，在all_entities一栏以列表的形式返回一个list[str]，作为结果的第一项
@@ -83,7 +83,7 @@ def ai_relation_extraction_ORG_gpt(article_title, content, formal_entity_list,
     
 def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allowed_entity_types=ALLOWED_ENTITY_TYPES_FOR_ORG, allowed_relation_types=ALLOWED_RELATION_TYPES_FOR_ORG):
     "用大模型检查一个content当中各个机构之间是否有给定类型的关系"
-    ai_response=API.ai_ask.ask_qwen(prompt_text='''
+    ai_response=API.ai_ask.ask_qwen_with_gpt_backup(prompt_text='''
             请查看如下文本片段，严格依照原文文本内容，按照如下步骤，结合你检索到的知识完成任务：
             {"title": %s, "section_content": %s, "entity_list": %s, "allowed_entity_types": %s, "allowed_relation_types": %s}
             1. 请查看entity_list当中的组织实体，判断他们属于allowed_entity_types中的什么类型的entity_type，仅能从这些类型中选择。判断完成后，在entity_type_dict一栏以字典的形式返回一个dict，给出结果的第一项

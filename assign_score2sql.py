@@ -32,10 +32,16 @@ def predict_text(embedding, mode, threshold=0.5):
         print("invalid mode name")
         return None, None
     
+    probas=None
+    predictions=None
+    
     with torch.no_grad():
         embedding_tensor = torch.tensor(embedding, dtype=torch.float32).unsqueeze(0)  # 添加 batch 维度
-        probas = torch.sigmoid(model(embedding_tensor.to(device))).cpu().numpy().item()
-        predictions = (probas > threshold)
+        try:
+            probas = torch.sigmoid(model(embedding_tensor.to(device))).cpu().numpy().item()
+            predictions = (probas > threshold)
+        except Exception as e:
+            print(f"Wrong size of tensor: {embedding_tensor}")
         
     # 返回一个01变量判定它是否是我们想要的
     return probas, predictions
