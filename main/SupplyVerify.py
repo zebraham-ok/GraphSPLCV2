@@ -188,6 +188,7 @@ def supply_verify_main(neo4j_host=None, max_workers=15):
             if not records:
                 print("当前内容全部处理完成，休眠10分钟")
                 time.sleep(600)
+                continue
             
             # 创建进度条
             with tqdm(total=len(records), desc="处理关系验证", unit="条") as pbar:
