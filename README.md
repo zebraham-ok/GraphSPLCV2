@@ -23,7 +23,7 @@
 + 下面是后续规划：
     + **ProductCategory**：直接从中国《统计用产品分类目录》导入，并且对**full_name**进行了向量化
     <!-- + **ProductModel**：具体的产品型号，让大模型基于原文生成一个对于产品的描述，然后再通过向量匹配建立与**ProductCategory**之间的关系 -->
-    + **Product**：Section原文中提到的实体，对其**name**属性进行了向量化，用于和Product.full_name进行匹配。
+    + **Product**：Section原文中提到的实体，对其**name**属性进行了向量化，用于和ProductCategory进行匹配，但从目前的效果来看，匹配《统计用产品分类目录》的分析价值有限，后续可能以自建分类体系为主。
     + **ManufactoringProcess**：暂时没有进行抽取
     + **Factory**、**MiningSite**：进行了抽取但是暂未实际使用<br>
 **————上面是实体，下面是关系————**
@@ -32,37 +32,61 @@
     + **Product**-**BelongToCategory**->**ProductCategory**
 
 ![开发架构](img\SPLC_v2.png)
-+ NER本地化部署
-+ neo4j当中既存Company，也存CompanyName（不带后缀），CompanyName附属于Company而存在，不能具有“Supply”这样的关系
++ 大模型主要使用阿里云百炼平台，仅保留少量的云雾API作为备用
++ 由于社区版Neo4j不允许多数据库，目前将所有节点混存在neo4j库当中
 
-# 主要文件
-+ `SQL2Neo4j.py`：将SQl中的Article导入Neo4j并以Section形式存储。目前已经成功测试了`SectionRec01`，可能会后续用于识别。但如果这意味着需要对拿进数据库的所有Section进行一次判定，这可能会导致一定的算力浪费。因此，在实际使用中我们可能会考虑优先对Article进行判别，同时考虑其长度问题，优先对于其中得分较高、长度适中的进行Embedding。
-+ `refresh_databse_load_time.py`：如果要重新导入，需要先用这个去除SQL中的load_time
-+ `QwenEmbedding.py`：通过通义千问v3的512维度模式对Section进行向量化。之后可能会对EntityObj进行相似的操作。目前这个并非必须运行。
-+ `NER_RE_Entity.py`：对Entity和EntityObj进行实体识别和关系抽取
-    + `ai_entity_recognition`：完成实体抽取、代词还原
-    + `ai_relation_extraction_ORG`：完成对给定实体类型判定、关系抽取
-+ `EntityDes.py`：给具有连边的实体赋予country、description等属性，并进一步排除不是中文正式全称的情况
-+ `NER_RE_Product.py`：对Product进行实体识别和关系抽取
-+ `RelationVerify.py`：对SupplyProductTo类型的关系进行判定，确认其方向，并赋予其更加丰富的信息`analysing_process", "status", "product", "amount", "amount_unit", "value", "value_unit"`
-+ `ProductCategorize.py`：找到一个产品对应的《统计用产品分类目录》代码
-+ `Output.ipynb`：输出gexf文件和图片 
+# 主要文件夹
++ `API`库用来处理与各类资源的基础交互功能
+    + `ai_ask.py`用来处理与大模型的交互，主要包含了`ask_qwen`,`ask_gpt`和`get_qwen_embedding`
+    + `neo4j_SPLC.py`处理与Neo4j的交互，在早先的版本中曾错误写作`neo4j_SLPC`，目前已经更正
+    + `liang_google_search.py`用亮数据API获取Google检索页面的信息，这个主要是做企业信息介绍用的
+    + `Mongo_SPLC.py`用于处理与MongoDB的交互，存储亮数据的Google检索页面，以免反复获取一样的信息费钱
++ `auxiliary`库用来存储一些辅助性的功能，目前包括：
+    + `line_count.py`用来查看目前一共写了多少行代码
+    + `show.py`用来绘制供应链上下游两级的图片（一般是给老板看用的）
++ `info`存储了分类信息
+    + `bloomberge_revise.json`是彭博的分类法，目前没使用
+    + `ic_category.json`是对于芯片产品的分类
+    + `ic_fab_category.json`是对于企业所属行业的分类
++ `main`当中是主要的代码模块
+    + `EntityDesGoogle.py`：用于给公司节点进行有针对性的信息增强（主要依据亮数据和大模型检索能力）
+        + `get_ai_enriched_info`：给具有连边的实体赋予country、stock_code_list和stock_ticker_list等属性，并进一步排除不是中文正式全称的情况
+        + `get_ai_enriched_category`：用于给公司属于什么行业、主要生产什么产品进行归类，提供description、industry_1、industry_2等属性信息
+    + `NER_RE_Entity.py`：对Entity和EntityObj进行实体识别和关系抽取
+        + `ai_entity_recognition`：完成实体抽取、代词还原
+        + `ai_relation_extraction_ORG`：完成对给定实体类型判定、关系抽取
+    + `NER_RE_Product.py`：对Product进行实体识别和关系抽取
+    + `ProductCateRec.py`：找到一个产品对应的《统计用产品分类目录》代码（暂时停用）
+    + `QwenEmbedding.py`：通过通义千问v3的512维度模式对Section进行向量化。之后可能会对EntityObj进行相似的操作。目前这个并非必须运行。
+    + `SQL2Neo4j.py`：将SQl中的Article导入Neo4j并以Section形式存储。目前已经成功测试了`SectionRec01`，可能会后续用于识别。但如果这意味着需要对拿进数据库的所有Section进行一次判定，这可能会导致一定的算力浪费。因此，在实际使用中我们可能会考虑优先对Article进行判别，同时考虑其长度问题，优先对于其中得分较高、长度适中的进行Embedding。
+    + `SupplyVerify.py`：对SupplyProductTo类型的关系进行判定，确认其方向，并赋予其更加丰富的信息`analysing_process", "status", "product", "amount", "amount_unit", "value", "value_unit"`
++ `model`中保存了需要被调用的pytorch模型，目前只有一个`des_w2_rc70.pth`是实际被使用的
++ `text_process`库用来在本地处理自然语言
+    + `chunks.py`用来执行文本切片
+    + `find_json.py`用来寻找大模型返回的字符串中json在哪里
+    + `file_process.py`主要包含了`sanitize_filename`，`save_json`和`file_freshness`三个功能
++ `procedures`用于保存需要调用多个API的、更加复杂一些的功能函数
+    + `ArticleDiscriminate.py`被`assign_score2sql.py`调用，用来执行文章鉴别，判断其是否值得被大模型处理
+    + `output_backup.py`用来支持`output_years.py`进行数据导出
++ `result`当中保存了由output模块导出的数据结果
++ `test`、`Previous`都是用来保存一些目前已经不需要的东西
+
+# 主要文件（main）
++ `assign_score2sql.py`：给MySQL中的文章进行打分，决定大模型优先处理谁
++ `main_end.py`：会启动子进程`supply_verify_main`和`ProductCateRec`（暂时停用）
++ `main_front.py`：会启动子进程`SQL2Neo4j`、`ner_re_entity_main`、`qwen_embedding_main`
++ `monitor.py`：用于监控MySQL和Neo4j中的导入进度
++ `Output.ipynb`：输出gexf文件和图片
++ `output_years.py`：用于分年份导出需要分析的数据
 
 ****
 下面是暂未发挥作用的代码
 + `Local_NER.py`：用于在本地实现实体关系识别，由于实在太不准确，目前用Qwen代替。
-
-
-# 库说明
-+ `API`库用来处理与各类资源的基础交互功能
-+ `text_process`库用来在本地处理自然语言
-+ `procedures`用于保存需要调佣API的、更加复杂一些的功能函数
-+ `QueryDoc`用来保存一些重要的查询语句（虽然这个其实也可以存在Neo4j里面）
-+ `result`当中保存了由output模块导出的数据结果
-+ `test`、`weaviate_trails`、`.ipynb`都是用来保存一些目前已经不需要的东西
++ `refresh_databse_load_time.py`：如果要重新导入，需要先用这个去除SQL中的load_time（目前这个几乎已经没有用了）
++ `reason_for_stop.py`：这是一个试验性的代码，用于查看SupplyProductTo.status属性为Stopped的具体原因
 
 # 配置说明
-+ 原来使用的版本是5.19，现在最新的版本是5.24。社区版下载地址：https://neo4j.com/deployment-center/#community
++ 原来使用的版本是5.19，现在最新的版本是5.24，社区版下载地址：https://neo4j.com/deployment-center/#community
 + 这里有一个旧版下载的地址：https://we-yun.com/doc/neo4j/
 + 必须使用APOC插件，下载地址：
     + http://doc.we-yun.com:1008/doc/neo4j-apoc/5.4.0/

@@ -17,7 +17,6 @@ def save_json(response_dict,save_dir,name):
     with open(os.path.join(save_dir,file_name),"w+",encoding="utf8") as file:
         file.write(response_text)
 
-
 def file_freshness(file,display=False):
     "获取文件的修改时间（时间戳）距离现在多少天"
     mod_time = os.path.getmtime(file)
