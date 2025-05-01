@@ -2,7 +2,7 @@ from neo4j import GraphDatabase
 from tqdm import tqdm
 import os
 import random,time
-from .ai_ask import read_secrets_from_csv
+from .secret_manager import read_secrets_from_csv
 
 # 从密码文件中读取
 secret_file=r"API\secrets.csv"
@@ -238,14 +238,30 @@ class Neo4jClient():
         parameters = {'sample_size': sample_size}
         return self.execute_query(query, parameters, database=database)
 
-    def Update_node(self, label, identifier_key, identifier_value, update_attrs, database="neo4j"):
-        set_attrs = ', '.join(f"n.{k} = ${k}" for k in update_attrs.keys())
-        query = f"""
-        MATCH (n:{label} {{{identifier_key}: ${identifier_key}_value}})
-        SET {set_attrs}
-        RETURN n
-        """
-        parameters = {**update_attrs, f'{identifier_key}_value': identifier_value}
+    def Update_node(self, update_attr_dict:dict, identifier_value, identifier_key="elementid", label=None, database="neo4j"):
+        set_attrs = ', '.join(f"n.{k} = ${k}" for k in update_attr_dict.keys())
+        "使用elementid或者某一属性为索引，更新一个节点的属性"
+        
+        if label:
+            label_str=f": {label}"
+        else:
+            label_str=""
+        
+        if identifier_key=="elementid":
+            query=f'''
+                MATCH (n{label_str}) where elementid(n)='{identifier_value}'
+                SET {set_attrs}
+                RETURN n
+            '''
+            parameters = update_attr_dict
+        else:
+            query = f"""
+                MATCH (n{label_str} {{{identifier_key}: ${identifier_key}_value}})
+                SET {set_attrs}
+                RETURN n
+            """
+            parameters = {**update_attr_dict, f'{identifier_key}_value': identifier_value}
+        # print(query)
         return self.execute_query(query, parameters, database=database)
 
     def reset_node_label(self, old_label, new_label, node_name=None, node_id=None, database="neo4j"):
@@ -575,13 +591,14 @@ class Neo4jClient():
     def vector_search(self, Label: str, query , attr, attr_value = "", database="neo4j", limit=10):
         """
         基于向量索引的相似性搜索（Neo4j 5.19+）
+        :attr: 要返回的属性
         :param Label: 节点标签，如 "Section"，这决定了index的使用，如section_qwen_embedding_index
         :param attr: 向量属性名，如 "embedding"
         :param query_vector: 查询向量（需与索引维度一致）
         :return: 包含(elementid, 文本, 相似度分数)的列表
         """
         # 动态生成索引名（需提前创建）
-        if Label not in ["EntityObj","Section","Article","ProductCategory"]:
+        if Label not in ["Section","Article","ProductCategory"]:
             index_name = "entityobj_qwen_embedding_index"
         else:
             index_name = f"{Label.lower()}_qwen_embedding_index"

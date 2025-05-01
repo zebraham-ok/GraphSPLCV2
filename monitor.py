@@ -22,7 +22,7 @@ def get_verified_counts():
 
 def get_processed_ratio():
     """
-    查询 processed_ratio。
+    查询 processed_ratio
     """
     query = """
     MATCH (n:Article)
