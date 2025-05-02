@@ -35,7 +35,7 @@ class MongoDBManager:
             
             # 配置参数（从secret.csv中获取）
             self.MONGO_URI = secret_dict.get("mongo_url", "mongodb://localhost:27017/")
-            self.DB_NAME = secret_dict.get("mongo_db", "my_database")
+            self.DB_NAME = secret_dict.get("mongo_db", "splc")  # 默认数据库名称
             self.default_collection = "webpage"
             self.connection_timeout = 5  # 秒
             self.max_pool_size = 100

@@ -1,4 +1,5 @@
 import API.SQL_SPLC
+import API.Mongo_SPLC
 # from collections import Counter
 from tqdm import tqdm
 
@@ -46,26 +47,33 @@ def predict_text(embedding, mode, threshold=0.5):
     # 返回一个01变量判定它是否是我们想要的
     return probas, predictions
 
-
-def process_record(record):
+collection="article_embedding"
+def process_record(record, mongo:API.Mongo_SPLC.MongoDBManager):
     """
     单条记录的处理逻辑
     """
     us_id, title, des = record
-    if isinstance(title, str) and isinstance(des, str):
-        embedding = get_qwen_embedding("《" + title + "》：" + des)
-    elif isinstance(title, str):
-        embedding = get_qwen_embedding(title)
-    elif isinstance(des, str):
-        embedding = get_qwen_embedding(des)
+    mongo_record=mongo.find(filter_query={"sqlId": us_id}, collection=collection)
+    if mongo_record:
+        embedding=mongo_record[0]["qwen_embedding"]
+        print(f"Using Cached Vector of {title}")
     else:
-        return None  # 如果 title 和 des 都不是字符串，跳过该记录
+        if isinstance(title, str) and isinstance(des, str):
+            embedding = get_qwen_embedding("《" + title + "》：" + des)
+        elif isinstance(title, str):
+            embedding = get_qwen_embedding(title)
+        elif isinstance(des, str):
+            embedding = get_qwen_embedding(des)
+        else:
+            return None  # 如果 title 和 des 都不是字符串，跳过该记录
+    if embedding and (title or des):
+        mongo.save(data={"sqlId": us_id, "title": title, "description": des, "qwen_embedding": embedding}, collection=collection)
 
     proba, prediction = predict_text(embedding=embedding, mode="Article", threshold=0.4)
     return us_id, proba
 
 
-def update_records_multithreaded(result_list, sql_host, max_workers=3):
+def update_records_multithreaded(result_list, sql_host, max_workers=3, mongo=None):
     """
     使用多线程批量更新数据库记录
     
@@ -77,7 +85,7 @@ def update_records_multithreaded(result_list, sql_host, max_workers=3):
     # 创建线程池
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # 提交任务到线程池
-        futures = [executor.submit(process_record, record) for record in result_list]
+        futures = [executor.submit(process_record, record, mongo) for record in result_list]
 
         # 使用 tqdm 显示进度条
         updates = []
@@ -98,13 +106,19 @@ def update_records_multithreaded(result_list, sql_host, max_workers=3):
 if __name__=='__main__':
     sql_host=API.SQL_SPLC.generate_sql_host(database="splc")
     
+    save_vectors=True
+    if save_vectors:
+        mongo_host=API.Mongo_SPLC.MongoDBManager()
+    else:
+        mongo_host=None
+    
     while True:
-        result=sql_host._execute_query(query="select US_id, title, des from crawler_main where load_time is null and useful is null and content is not null limit 500")
+        result=sql_host._execute_query(query="select US_id, title, des from crawler_main where load_time is null and useful is null and content is not null and (title is not null or des<>'') limit 500")
         result_list=result.fetchall()
         if not result_list:
             break
         
-        update_records_multithreaded(result_list, sql_host, max_workers=3)
+        update_records_multithreaded(result_list, sql_host, max_workers=3, mongo=mongo_host)
         
         # for record in tqdm(result_list):
         #     us_id, title, des = record
