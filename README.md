@@ -51,7 +51,8 @@
 + `main`当中是主要的代码模块
     + `EntityDesGoogle.py`：用于给公司节点进行有针对性的信息增强（主要依据亮数据和大模型检索能力）
         + `get_ai_enriched_info`：给具有连边的实体赋予country、stock_code_list和stock_ticker_list等属性，并进一步排除不是中文正式全称的情况
-        + `get_ai_enriched_category`：用于给公司属于什么行业、主要生产什么产品进行归类，提供description、industry_1、industry_2等属性信息
+        + `get_ai_enriched_category`：用于给公司属于什么行业、主要生产什么产品进行归类，提供description、industry_1st、industry_2nd等属性信息
+        + `ai_chip_type_check`：对于芯片直接相关的企业，询问大模型它的产品构成
     + `NER_RE_Entity.py`：对Entity和EntityObj进行实体识别和关系抽取
         + `ai_entity_recognition`：完成实体抽取、代词还原
         + `ai_relation_extraction_ORG`：完成对给定实体类型判定、关系抽取

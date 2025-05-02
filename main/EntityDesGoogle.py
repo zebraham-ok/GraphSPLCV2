@@ -70,7 +70,7 @@ def get_high_degree_entities(neo4j_host, limit=1000):
     """获取高度中心性的实体"""
     query = '''
         MATCH (n)-[r:SupplyProductTo]-(m)
-        WHERE n.name is not null AND size(labels(n)) > 0 and n.industry is null
+        WHERE n.name is not null AND size(labels(n)) > 0 and n.industry_1st is null
         RETURN n.name AS name, 
                labels(n) as labels, 
                elementId(n) as id, 
@@ -93,8 +93,8 @@ def process_single_entity(neo4j_host, entity_data):
     # 获取AI增强信息
     ai_cate = get_ai_enriched_category(entity_name, enrich_info=google_info_extracted)
     ai_info = get_ai_enriched_info(entity_name, primary_label, enrich_info=google_info_extracted)
-    print(ai_info)
-    print(ai_cate)
+    # print(ai_info)
+    # print(ai_cate)
     
     if (not ai_cate) or (not ai_info):
         # 对于无法生成描述的实体进行标记，免得每次都要重新处理一遍
@@ -102,21 +102,29 @@ def process_single_entity(neo4j_host, entity_data):
         # neo4j_host.execute_query("match (n:EntityObj) where elementid(n)=$id set n.description=false", parameters={"id": entity_id})
         return
     
+    industry_1=ai_cate.get("industry_1st", "")
+    industry_2=ai_cate.get("industry_2nd", "")
     
     # 先将这个全名取出来，以免被更新到neo4j中
     full_cn_name=ai_info.pop("full_cn_name")
     
     # 更新节点属性
-    
-    update_node_properties(neo4j_host, entity_id, ai_info)
-    update_node_properties(neo4j_host, entity_id, ai_cate)
+    all_data={**ai_info, **ai_cate}
+    if industry_1 in ["无晶圆设计企业(Fabless)", "芯片制造", "电子元件", "制造业应用"] and industry_2 not in ["晶圆代工厂(Foundry)", "新能源", "航空航天/国防", "机械", "汽车制造", "机器人"]:
+        chip_type_cate=ai_chip_type_check(entity_name, enrich_info=google_info_extracted)
+        all_data.update(chip_type_cate)
+    else:
+        print(f"{entity_name} 是 {industry_1} 企业，不是芯片企业")
+        
+    # print(json.dumps(all_data,ensure_ascii=False, indent=2))
+    update_node_properties(neo4j_host, entity_id, all_data)
     
     # 之前已经处理过一次了，暂时先注释掉这两行
     # if full_cn_name not in [entity_name, "", "未知", "不明"]:
     #     handle_same_entity_relation(neo4j_host, entity_id, full_cn_name)
+    # print("———————————"*10)
 
 from functools import wraps
-
 def retry(max_retries=3, exceptions=(json.JSONDecodeError, KeyError)):
     """
     重试装饰器，支持自定义重试次数和捕获异常类型
@@ -152,17 +160,17 @@ def get_ai_enriched_category(entity_name, enrich_info=""):
             "is_included": bool, 
             "analysis_1": str,
             "analysis_2": str,
-            "indsustry_1": str,
-            "indsustry_2": list[str],
-            "other_possible_category", list[str]
+            "industry_1st": str,
+            "industry_2nd": str,
+            "other_possible_industry_2", list[str]
         }}
         1. 请根据开头的文本信息，用两三句中文描述【{entity_name}】的业务领域、所属行业、业务模式等基本信息，写在description位置；
-        2. 请首先判断，是否可以被上述分类体系所涵盖，请在is_included处用bool值进行判断；
+        2. 请判断，该企业是否可以被上述分类体系所涵盖，请在is_included处用bool值进行判断；
         3. 请思考【{entity_name}】属于哪一个一级类别，并给出你的分析过程在analysis_1处（用“”引号引用原文来分析）；
         4. 请思考该企业属于哪些二级类别，并给出你的分析过程在analysis_2处（用“”引号引用原文来分析）；
-        5. 请从上述分类体系中，选出它的一级类别（仅1个），写在indsustry_1处；
-        6. 请从上述分类体系中，将符合其特点的二级类别用一个list of string写在indsustry_2处（原材料和设备企业，可以有多个二级类别，设计和制造企业只能有一个二级类别）；
-        7. 如果你认为上述分类不足以描述该企业的完整特点，请在该分类体系之外，找出几个你认为更适合描述该企业的行业属性的词语，写在以list of string的形式写在other_possible_category位置。如果你认为不需要，请返回空列表。
+        5. 请从上述分类体系中，选出【{entity_name}】最符合的一级类别（仅1个），写在industry_1st处；
+        6. 请从上述分类体系中，选出该企业最符合的二级类别（仅1个），写在industry_2nd处；
+        7. 如果你认为上面这一个industry_2nd不足以描述该企业的完整特点，请找出其它你认为也适合描述该企业的行业属性的二级类别，以list of string的形式写在other_possible_industry_2位置。如果你认为不需要，请返回空列表。
         注意：你提供的信息必须依据原文材料，真实、准确、可靠。
     '''
     # 实际上设备企业经常可以生产多种设备
@@ -181,21 +189,21 @@ def get_ai_enriched_category(entity_name, enrich_info=""):
         return None
         
     validated_dict=validate_ai_cate_response(json.loads(response))
-    print(f"validated dict of category response {validated_dict}")
+    # print(f"validated dict of category response {validated_dict}")
     return validated_dict
 
 def validate_ai_cate_response(data: dict):
     """验证AI返回数据结构"""
     
-    required_fields = ["description", "is_included", "analysis_1", "analysis_2", "indsustry_1", "indsustry_2"]
+    required_fields = ["description", "is_included", "analysis_1", "analysis_2", "industry_1st", "industry_2nd"]
     
     if not all(field in data for field in required_fields):
         raise ValueError("缺少必要字段")
     
     analysis_1=data.pop("analysis_1")
     analysis_2=data.pop("analysis_2")
-    analysis=str(analysis_1)+"\n"+str(analysis_2)
-    data["analysis"]=analysis
+    # analysis=str(analysis_1)+"\n"+str(analysis_2)
+    # data["analysis"]=analysis
     contain_stock_info=data.pop("is_included")
     
     # description=data["description"]
@@ -203,15 +211,72 @@ def validate_ai_cate_response(data: dict):
     #     data["description"]=description[:300]
     
     if contain_stock_info:
-        industry_1=data.get("indsustry_1")
-        industry_2=data.get("indsustry_2")
-        if not industry_1:   # 应该增加一个验证，确认这些类别是否是我们规定的类别
-            raise ValueError("缺少indsustry_1")
-        if industry_1 not in ic_fab_category_industry_1:
-            print(f"{industry_1} 不在预设的分类体系中")
-        if not industry_2:
-            raise ValueError("缺少indsustry_2")
+        industry_1st=data.get("industry_1st")
+        industry_2nd=data.get("industry_2nd")
+        if not industry_1st:   # 应该增加一个验证，确认这些类别是否是我们规定的类别
+            raise ValueError("缺少industry_1st")
+        if industry_1st not in ic_fab_category_industry_1:
+            print(f"{industry_1st} 不在预设的分类体系中")
+        if not industry_2nd:
+            raise ValueError("缺少industry_2nd")
     return data
+
+# 从Category信息中，选择需要进行芯片类型细分的，进行自动化细分
+@retry(max_retries=3)
+def ai_chip_type_check(entity_name, enrich_info):
+    prompt_text=f'''
+        {enrich_info}
+        上面是一些可能与【{entity_name}】有关的信息
+        下面是一个三级分类体系，描述了主要的集成电路产品类型：
+        {ic_category}
+        回答的具体json格式如下所示：
+        {{
+            "analysis": str,
+            "can_find_category": bool, 
+            "category_1st": str,
+            "category_2nd": str,
+            "category_3rd": str,
+            "other_possible_category_3rd", list[str]
+        }}
+        1. 请根据开头的文本信息，分析【{entity_name}】的可以生产哪些类型的集成电路，写在analysis位置；
+        2. 请首先判断，该企业是否生产上述三级分类中的产品？请在can_find_category处用bool值进行判断；
+        3. 请思考【{entity_name}】的首要产品属于哪一个一级类别？写在category_1st处（仅1个）；
+        4. 请思考【{entity_name}】的首要产品属于哪一个二级类别？写在category_2nd处（仅1个）；
+        5. 请思考【{entity_name}】的首要产品属于哪一个三级类别？写在category_3rd处（仅1个）；
+        6. 如果你认为该企业在此之外还有其它集成电路产品，请找出其它产品的的三级类别，以list of string的形式写在other_possible_category_3rd位置。如果你认为不需要，请返回空列表。
+        注意：你提供的信息必须依据原文材料，真实、准确、可靠。
+    '''
+    # 实际上设备企业经常可以生产多种设备
+    response = API.ai_ask.ask_qwen_with_gpt_backup(
+        prompt_text=prompt_text,
+        system_instruction="你是一个商业信息情报员，提供json格式的准确结构化数据",
+        temperature=0.05,
+        enable_search=True,
+        mode="json",
+        model="qwen-plus",
+        retry_model="gpt-4o"
+    )
+            
+    if not response:
+        print(f"description for {entity_name} generation failed")
+        return None
+        
+    validated_dict=validate_ai_chip_response(json.loads(response))
+    # print(f"validated dict of category response {validated_dict}")
+    return validated_dict
+
+def validate_ai_chip_response(data: dict):
+    required_fields = ["analysis", "can_find_category", "category_1st", "category_2nd"]
+    
+    if not all(field in data for field in required_fields):
+        raise ValueError("缺少必要字段")
+    
+    can_find_category=data.pop("can_find_category")
+    analysis=data.pop("analysis")  # 删掉analysis不让它进入后续的处理阶段
+    # print(analysis)
+    
+    if can_find_category:
+        return data
     
 # 使用装饰器的函数示例
 @retry(max_retries=3)
@@ -318,4 +383,8 @@ def entity_des_main(neo4j_host=None, max_worker=4):
         
 # 使用示例
 if __name__ == "__main__":
-    entity_des_main()
+    from main.EntityDesGoogle import entity_des_main
+    from Neo4jHost import get_reomte_driver
+
+    neo4j_host=get_reomte_driver()
+    entity_des_main(neo4j_host)
