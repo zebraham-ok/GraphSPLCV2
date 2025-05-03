@@ -38,6 +38,13 @@ def get_processed_ratio():
     record = result[0]
     return record["processed_ratio"]
 
+def get_des_done_number():
+    query='''match (n:Company) where n.other_possible_industry_2 is not null
+        return count(n) as des_done_num'''
+    result = neo4j_host.execute_query(query)
+    record = result[0]
+    return record["des_done_num"]
+
 def get_load_done_ratio():
     """
     查询 load_done_ratio。
@@ -73,13 +80,14 @@ def monitor_and_plot():
     try:
         # 初始化绘图
         plt.ion()  # 开启交互模式
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 8))  # 创建三个子图
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 8))  # 创建三个子图
 
         # 初始化数据
         times = []
         null_verified_counts = []
         processed_ratios = []
         load_done_ratios = []
+        des_done_numbers = []
 
         while True:
             # 获取当前时间
@@ -93,12 +101,15 @@ def monitor_and_plot():
 
             # 查询 load_done_ratio
             load_done_ratio = get_load_done_ratio()
+            
+            des_done_number = get_des_done_number()
 
             # 更新数据
             times.append(current_time)
             null_verified_counts.append(null_verified_count)
             processed_ratios.append(processed_ratio)
             load_done_ratios.append(load_done_ratio)
+            des_done_numbers.append(des_done_number)
 
             # 限制数据点数量（例如最近 60 秒的数据）
             # if len(times) > 60:
@@ -108,9 +119,8 @@ def monitor_and_plot():
             #     load_done_ratios.pop(0)
 
             # 清空画布
-            ax1.clear()
-            ax2.clear()
-            ax3.clear()
+            for ax in [ax1, ax2, ax3, ax4]:
+                ax.clear()
 
             # 绘制第一个子图：Unverified Supply Count
             ax1.plot(times, null_verified_counts, 'b-', label='Unverified Supply Count')
@@ -130,6 +140,13 @@ def monitor_and_plot():
             ax3.set_xlabel('Time')
             ax3.set_ylabel('Ratio')
             ax3.legend(loc='upper left')
+            
+            # 绘制第四个子图：Load Done Ratio
+            ax4.plot(times, des_done_numbers, 'y-', label='Des Done Number')
+            # ax4.set_title('Load Done Ratio')
+            ax4.set_xlabel('Time')
+            ax4.set_ylabel('Number')
+            ax4.legend(loc='upper left')
 
             # 刷新画布
             plt.draw()

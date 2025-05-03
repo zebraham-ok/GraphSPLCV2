@@ -99,7 +99,7 @@ def process_single_entity(neo4j_host, entity_data):
     if (not ai_cate) or (not ai_info):
         # 对于无法生成描述的实体进行标记，免得每次都要重新处理一遍
         print("ai no response")
-        # neo4j_host.execute_query("match (n:EntityObj) where elementid(n)=$id set n.description=false", parameters={"id": entity_id})
+        neo4j_host.execute_query("match (n:EntityObj) where elementid(n)=$id set n.industry_1st=false", parameters={"id": entity_id})
         return
     
     industry_1=ai_cate.get("industry_1st", "")
@@ -177,7 +177,7 @@ def get_ai_enriched_category(entity_name, enrich_info=""):
     response = API.ai_ask.ask_qwen_with_gpt_backup(
         prompt_text=prompt_text,
         system_instruction="你是一个商业信息情报员，提供json格式的准确结构化数据",
-        temperature=0.05,
+        temperature=0,
         enable_search=True,
         mode="json",
         model="qwen-plus",
@@ -250,7 +250,7 @@ def ai_chip_type_check(entity_name, enrich_info):
     response = API.ai_ask.ask_qwen_with_gpt_backup(
         prompt_text=prompt_text,
         system_instruction="你是一个商业信息情报员，提供json格式的准确结构化数据",
-        temperature=0.05,
+        temperature=0,
         enable_search=True,
         mode="json",
         model="qwen-plus",
@@ -308,7 +308,7 @@ def get_ai_enriched_info(entity_name, label, enrich_info=""):
     response = API.ai_ask.ask_qwen_with_gpt_backup(
         prompt_text=prompt_text,
         system_instruction="你是一个商业信息情报员，提供json格式的准确结构化数据",
-        temperature=0.05,
+        temperature=0,
         enable_search=True,
         mode="json",
         model="qwen-turbo",
