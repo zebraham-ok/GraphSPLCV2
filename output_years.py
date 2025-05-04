@@ -1,12 +1,14 @@
 "按年份分别导出网络"
-import API.neo4j_SPLC
-neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
+# import API.neo4j_SPLC
+# neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
+from Neo4jHost import get_reomte_driver
+neo4j_host=get_reomte_driver()
 
 from procedures.output_backup import *
 import os
 
 exporter=Neo4jExporter(neo4j_host)
-G_dict=exporter.export_supply_relations_by_year(start_year=2013, end_year=2021)
+G_dict=exporter.export_supply_relations_by_year(start_year=2013, end_year=2025)
 
 output_path=r"result\YearOutput"
 for year, G in G_dict.items():

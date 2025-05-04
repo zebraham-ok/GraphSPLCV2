@@ -72,13 +72,12 @@
 + `result`当中保存了由output模块导出的数据结果
 + `test`、`Previous`都是用来保存一些目前已经不需要的东西
 
-# 主要文件（main）
-+ `assign_score2sql.py`：给MySQL中的文章进行打分，决定大模型优先处理谁
-+ `main_end.py`：会启动子进程`supply_verify_main`和`ProductCateRec`（暂时停用）
-+ `main_front.py`：会启动子进程`SQL2Neo4j`、`ner_re_entity_main`、`qwen_embedding_main`
-+ `monitor.py`：用于监控MySQL和Neo4j中的导入进度
-+ `Output.ipynb`：输出gexf文件和图片
-+ `output_years.py`：用于分年份导出需要分析的数据
+# MongoDB的配置
+目前一共使用了三个MongoDB模块，其中1个在爬虫部分，2个在处理部分。数据库名称都叫splc
++ 爬虫部分：使用了google_search_result对亮数据返回的检索信息进行存储（转换为bing格式存储）
++ 处理部分：
+    + article_embedding：对于文章及其摘要的嵌入进行存储，以sqlId作为索引
+    + google_company：在生成公司摘要过程中进行的网页检索（以google原格式存储）
 
 ****
 下面是暂未发挥作用的代码
@@ -105,3 +104,4 @@
 + 关系抽取虽然deepseek也能做得很好，但是它实在是太慢了（30秒左右才能改一个回复），阿里云百炼平台上的DeepSeek-R1-Distill-Llama-8B其实也不错，但是比gpt-4o的幻觉会多一些，多语种效果可能也不够好。llama-4-maverick-17b-128e-instruct还要更好一点，但是目前qwen平台上对这个是限流的。
 + 考虑到SupplyVerify的使用频率不高，可以使用阿里云平台提供的deepseek-r1（qwen蒸馏的deepseek还是差距较大）
 + 本来想使用**ProductModel**来区分产品型号和模糊的产品描述，但是大模型似乎在这一点上还有困难，暂时统一使用**Product**，后续有机会可以从其中将**ProductModel**单独分离出来。
++ 目前使用的企业分类法虽然仍然存在一定的问题（比如三级产品分类很难概括一个公司的整体情况，产品分类与行业分类相重叠等问题），但有时候三级分类的存在其实是为了让大模型更好地理解二级分类，在实际处理数据的时候我们仅使用二级分类就可以了。
