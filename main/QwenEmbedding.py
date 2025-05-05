@@ -19,10 +19,10 @@ MAX_WORKERS = 5
 
 def process_node(record, neo4j_host):
     id = record["id"]
-    title = record["title"]
-    content = record["content"]
-    name = record["name"]
-    full_name = record["full_name"]
+    title = record.get("title")
+    content = record.get("content")
+    name = record.get("name")
+    full_name = record.get("full_name")
     
     if isinstance(full_name, str):  # ProductCategpry
         embedding = get_qwen_embedding(text=full_name, dimensions=512)
@@ -41,8 +41,7 @@ def process_node(record, neo4j_host):
         parameters={"id": id, "embedding": embedding}
     )
 
-
-def qwen_embedding_main(neo4j_host=None, max_worker=MAX_WORKERS):
+def qwen_embedding_product(neo4j_host=None, max_worker=MAX_WORKERS):
     if not neo4j_host:
         neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
         
@@ -58,6 +57,45 @@ def qwen_embedding_main(neo4j_host=None, max_worker=MAX_WORKERS):
             
             # 使用as_completed确保按完成顺序处理
             futures = {executor.submit(process_node, record, neo4j_host): record for record in nodes_to_embed}
+            for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Embedding"):
+                try:
+                    future.result()  # 检查是否有异常抛出
+                except Exception as e:
+                    print(f"Generated an exception: {e}")
+                    
+def qwen_embedding_entityobj(neo4j_host=None, 
+                           max_worker=MAX_WORKERS,
+                           degree_threshold=10):
+    if not neo4j_host:
+        neo4j_host = API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
+    
+    # 基于度中心性的筛选查询
+    cypher_query = f"""
+    MATCH (n:EntityObj)-[r:SupplyProductTo]-(m)
+    WHERE n.qwen_embedding IS NULL
+    WITH n, 
+         elementId(n) AS id, 
+         n.name AS name,
+         n.title as title, 
+         COUNT(DISTINCT m) AS degree
+    WHERE degree >= {degree_threshold}
+    RETURN id, title, name, degree
+    ORDER BY degree DESC
+    LIMIT 1000
+    """
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
+        while True:
+            nodes_to_embed = neo4j_host.execute_query(cypher_query)
+            
+            if len(nodes_to_embed) == 0:
+                time.sleep(60 * 15)
+                print("嵌入全部完成")
+                continue
+
+            # 异步处理逻辑（保持原有逻辑）
+            futures = {executor.submit(process_node, record, neo4j_host): record 
+                      for record in nodes_to_embed}
             for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Embedding"):
                 try:
                     future.result()  # 检查是否有异常抛出

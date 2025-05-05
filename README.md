@@ -12,10 +12,10 @@
 **————上面是实体，下面是关系————**
     所有的关系中，都会有reference_section, original_content, url来指明其出处
     + **Section**-**SectionOf**->**Article**：被`SQL2Neo4j.py`生成
-    + **Section**-**Mention**->**Entity**：（由`SectionNER_RE.py`的`ai_entity_recognition`生成）
-    + **Entity**-**FullNameIs**->**EntityObj**：（由`SectionNER_RE.py`的`ai_entity_recognition`生成）
-    + **EntityObj**-**FullNameIs**->**EntityObj**：被`EntityDes.py`生成，是对同义词的二次过滤
-    + 其它EntityObj之间可以拥有的关系：`ALLOWED_RELATION_TYPES_FOR_ORG={"SupplyProductTo", "PartnerOf", "OfferFianceService", "WinBidFor", "SubsidiaryOf", "GrantTechTo", "OwnFactory", "OwnMiningSite"}`
+    + **Section**-**Mention**->**Entity**：由`SectionNER_RE.py`的`ai_entity_recognition`生成
+    + **Entity**-**FullNameIs**->**EntityObj**：由`SectionNER_RE.py`的`ai_entity_recognition`生成
+    + **EntityObj**-**FullNameIs**->**EntityObj**：被`EntityDesGoogle.py`中的`handle_same_entity_relation`生成，是对同义词的二次过滤
+    + 其它EntityObj之间可以拥有的关系：`ALLOWED_RELATION_TYPES_FOR_ORG = {"SupplyProductTo", "PartnerOf", "OfferFianceService", "WinBidFor", "SubsidiaryOf", "GrantTechTo", "OwnFactory", "OwnMiningSite"}`
 
 + 其实，OfferFianceService和Media并不是我们想研究的，但是这样可以吸走一些无关的东西以免大模型将其与我们想研究的供应链关系混淆。
 + 除了组织间关系之外，产品和技术的关系也很重要。这部分信息可以单独再访问一次大模型获得，一次要返回的数据太多会导致不准确。
@@ -105,3 +105,4 @@
 + 考虑到SupplyVerify的使用频率不高，可以使用阿里云平台提供的deepseek-r1（qwen蒸馏的deepseek还是差距较大）
 + 本来想使用**ProductModel**来区分产品型号和模糊的产品描述，但是大模型似乎在这一点上还有困难，暂时统一使用**Product**，后续有机会可以从其中将**ProductModel**单独分离出来。
 + 目前使用的企业分类法虽然仍然存在一定的问题（比如三级产品分类很难概括一个公司的整体情况，产品分类与行业分类相重叠等问题），但有时候三级分类的存在其实是为了让大模型更好地理解二级分类，在实际处理数据的时候我们仅使用二级分类就可以了。
++ 在尝试与FactSet进行对齐的过程中，发现FactSet中其实同一个公司在不同时期的信息是不一样的，因此造成了可能会重复创建公司节点（这些重复创建的节点一般company_subsidiary或者company_keyword与主节点是不一样的，具有的连边数量远少于主节点。因此准确地识别主体，应当采取name、ticker、company_subsidiary和company_keyword结合的方法。这些都一样的节点理论上应该将其合并了。
