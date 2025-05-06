@@ -1,4 +1,4 @@
-from Neo4jHost import get_reomte_driver
+from Neo4jHost import get_remote_driver
 from main.NER_RE_Entity import ner_re_entity_main
 # from main.NER_RE_Product import ner_re_product_main
 from main.SQL2Neo4j import sql2neo4j_main
@@ -6,7 +6,7 @@ from main.SQL2Neo4j import sql2neo4j_main
 from main.QwenEmbedding import qwen_embedding_entityobj
 from concurrent.futures import ThreadPoolExecutor
 
-neo4j_host=get_reomte_driver()
+neo4j_host=get_remote_driver()
 
 # 定义主函数
 def main_end():

@@ -1,11 +1,11 @@
-from Neo4jHost import get_reomte_driver
+from Neo4jHost import get_remote_driver
 import matplotlib.pyplot as plt
 import time
 from datetime import datetime
 from API.SQL_SPLC import generate_sql_host
 
 # 初始化 Neo4j 驱动
-neo4j_host = get_reomte_driver()
+neo4j_host = get_remote_driver()
 sql_host = generate_sql_host(database="splc")
 
 def get_verified_counts():

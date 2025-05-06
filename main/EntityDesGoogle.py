@@ -301,7 +301,7 @@ def get_ai_enriched_info(entity_name, label, enrich_info=""):
         4. 在synonym_name_list处，请你用中文、英文以及该企业所在国家的语言，给出它的其它常见名称同义词；
         5. 该企业是否是上市公司？如果原文中包含{entity_name}的股票代码信息，请在contain_stock_info处返回true，否则返回false；
         6. 一个公司可能在不同地方上市从而有多个股票标签，如果原文确实包含{entity_name}的股票ticker信息，请将它的Token写在stock_ticker_list处（如：["NVDA"]和["贵州茅台"]），否则返回空列表；
-        7. 如果原文确实包含{entity_name}的股票代码，请将它的股票代码以list of string的形式写在stock_code_list处（以数据.市场代码的格式，如：00000.KS或1111.SH），否则请在stock_code_list处返回空列表。
+        7. 如果原文确实包含{entity_name}的股票代码，请将它的股票代码以list of string的形式写在stock_code_list处（以数据.市场代码的格式，如：0000.KS或XXXX.NAS或1111.SH），否则请在stock_code_list处返回空列表。
         注意：你提供的信息必须依据原文材料，真实、准确、可靠。
     '''
             
@@ -356,6 +356,9 @@ def update_node_properties(neo4j_host: API.neo4j_SPLC.Neo4jClient, entity_id: st
     #     "id": entity_id,
     #     **ai_info        
     # })
+    allowed_keys=["stock_code_list", "stock_ticker_list", "full_cn_name", "country", 
+                  "category_1st", "category_2nd", 
+                  "description", "industry_1st", "industry_2nd"]
     ai_info["updated_at"]=datetime.now()
     update_result=neo4j_host.Update_node(update_attr_dict=ai_info, identifier_value=entity_id)
     # print(update_result)
@@ -384,7 +387,7 @@ def entity_des_main(neo4j_host=None, max_worker=4):
 # 使用示例
 if __name__ == "__main__":
     from main.EntityDesGoogle import entity_des_main
-    from Neo4jHost import get_reomte_driver
+    from Neo4jHost import get_remote_driver
 
-    neo4j_host=get_reomte_driver()
+    neo4j_host=get_remote_driver()
     entity_des_main(neo4j_host)

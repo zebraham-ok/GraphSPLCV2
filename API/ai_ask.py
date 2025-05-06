@@ -11,7 +11,10 @@ from .secret_manager import read_secrets_from_csv
 import requests
 import os
 import openai
+import logging
 
+# 禁用 httpx 的 INFO 级别日志，要在WARNING级别以上才会打印出来
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 current_file = os.path.abspath(__file__)
 current_dir = os.path.dirname(current_file)
@@ -60,31 +63,6 @@ def solve_nested_quotes(text):
         return new_text
     else:
         return text
-
-def process_json_response(outer_braces_list):
-    "专门用来处理[str(dict), str(dict)...]形式的数据，将其变为真正的字典"
-    parsed_data_list=[]
-    for outer_brace in outer_braces_list:
-        temp_parsed_dict={}
-        try:
-            temp_parsed_dict=eval(outer_brace.replace("null","None"))
-        except Exception as e:  # eval是用Python运行程序，因此无法处理json中的null，而json.loads可以
-            print(f"eval function failed with {e} trying solve nested quotes")
-        if temp_parsed_dict and isinstance(temp_parsed_dict,dict):
-            parsed_data_list.append(temp_parsed_dict)
-            continue
-        try:   # 在尝试将字符串转化为字典的时候，要注意文本中可能存在的反斜杠(replace解决子，re可以)
-            outer_brace=solve_nested_quotes(outer_brace)
-            outer_brace=outer_brace.replace("\n","").replace("  ","")  # 避免多余部分
-            outer_brace=re.sub('''",}''','''"}''',outer_brace)
-            outer_brace=re.sub('''", }''','''"}''',outer_brace)
-            temp_parsed_dict=json.loads(re.sub(r'\\', '/', outer_brace))
-        except json.JSONDecodeError as e:
-            print(e, f"{outer_brace} cannot be converted to dictionaty")
-            continue
-        if temp_parsed_dict:   # 一般来说是url或者pdf
-            parsed_data_list.append(temp_parsed_dict)
-    return parsed_data_list        
 
 qwen_base_url="https://dashscope.aliyuncs.com/compatible-mode/v1" 
 qwen_client=openai.OpenAI(base_url=qwen_base_url,api_key=secret_dict["qwen"],timeout=60)  
