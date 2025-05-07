@@ -12,7 +12,7 @@ LABEL_PRIORITY = [
     "Factory", "Academic", "NGO", "Others", "EntityObj"
 ]
 
-NODE_ATTR = ["country"]
+NODE_ATTR = ["country", "industry_1st", "industry_2nd", "category_1st", "category_2nd", "category_3rd"]
 
 EDGE_ATTR = ["product", "product_category", "status"]
 

@@ -310,7 +310,7 @@ class SectionProcessor:
                             main_result["relationship_list"],
                             entity_map,
                             section_id,
-                            "《"+title+"》: "+content,
+                            "《"+title+"》: "+content if title else content,
                             url,
                             time_stamp
                         )
