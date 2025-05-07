@@ -40,7 +40,8 @@ def ai_entity_recognition(article_title, content):
         enable_search=True
         )
     try:
-        return json.loads(ai_response)
+        ai_dict=get_dict_from_str(ai_response)[0]
+        return ai_dict
     except Exception as e:
         print(e)
         return {}
@@ -103,7 +104,7 @@ def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allow
         # enable_search=True
         )
     try:
-        return get_dict_from_str(ai_response)
+        return get_dict_from_str(ai_response)[0]
     except Exception as e:
         print(e)
         return {}
@@ -292,8 +293,8 @@ class SectionProcessor:
                 )
                 
                 # print("relation result: ", relation_result)
-                if relation_result and isinstance(relation_result, list):
-                    main_result = relation_result[0]
+                if relation_result and isinstance(relation_result, dict):
+                    main_result = relation_result
                     # print(main_result)
                     # 处理实体类型
                     if "entity_type_dict" in main_result:

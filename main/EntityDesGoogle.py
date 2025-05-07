@@ -14,6 +14,7 @@ from API.Mongo_SPLC import MongoDBManager
 from API.liang_google_search import LiangGoogleAPI4Company
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from text_process.find_json import get_dict_from_str
 
 liang_host=LiangGoogleAPI4Company(default_collection="google_company")
 mongo_host=MongoDBManager()
@@ -187,9 +188,14 @@ def get_ai_enriched_category(entity_name, enrich_info=""):
     if not response:
         print(f"description for {entity_name} generation failed")
         return None
+    
+    try:
+        ai_dict=get_dict_from_str(response)[0]
+    except Exception as e:
+        print(f"Error in get_ai_enriched_category {e}")
+        return None
         
-    validated_dict=validate_ai_cate_response(json.loads(response))
-    # print(f"validated dict of category response {validated_dict}")
+    validated_dict=validate_ai_cate_response(ai_dict)
     return validated_dict
 
 def validate_ai_cate_response(data: dict):
@@ -260,9 +266,14 @@ def ai_chip_type_check(entity_name, enrich_info):
     if not response:
         print(f"description for {entity_name} generation failed")
         return None
+    
+    try:
+        ai_dict=get_dict_from_str(response)[0]
+    except Exception as e:
+        print(f"Error in ai_chip_type_check {e}")
+        return None
         
-    validated_dict=validate_ai_chip_response(json.loads(response))
-    # print(f"validated dict of category response {validated_dict}")
+    validated_dict=validate_ai_chip_response(ai_dict)
     return validated_dict
 
 def validate_ai_chip_response(data: dict):
@@ -318,8 +329,14 @@ def get_ai_enriched_info(entity_name, label, enrich_info=""):
     if not response:
         print(f"description for {entity_name} generation failed")
         return None
+    
+    try:
+        ai_dict=get_dict_from_str(response)[0]
+        return ai_dict
+    except Exception as e:
+        print(f"Error in get_ai_enriched_info {e}")
+        return {}
         
-    return validate_ai_info_response(json.loads(response))
 
 def validate_ai_info_response(data: dict):
     """验证AI返回数据结构"""

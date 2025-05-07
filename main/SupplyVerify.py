@@ -46,7 +46,11 @@ def ai_splc_verify(supplier, customer, s_des, c_des, content, s_produce_list, c_
             temperature=0.05,
             # enable_search=True
         )
-    return get_dict_from_str(ai_response)
+    try:
+        return get_dict_from_str(ai_response)[0]
+    except Exception as e:
+        print(f"Error in ai_splc_verify {e}")
+        return None
 
 
 class Neo4jHandler:
@@ -137,7 +141,7 @@ def process_record(record, neo_handler: Neo4jHandler):
             record['supplier'], record['customer'],
             record['s_des'], record['c_des'], record['content'],
             s_info['produce'], c_info['produce'], s_info['need'], c_info['need']
-        )[0]
+        )
         
         # print(ai_result)
 
