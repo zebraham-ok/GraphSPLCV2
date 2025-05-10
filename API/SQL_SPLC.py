@@ -377,6 +377,32 @@ class MySQLClient:
 
         print(f"批量更新完成，共更新{total_updated}行")
         return total_updated
+    
+    def copy_table_between_databases(self, src_table: str, dest_client, batch_size=1000):
+        """
+        从源数据库的表复制数据到目标数据库的同名表中。
+        
+        参数:
+            src_table (str): 源数据库中的表名。
+            dest_client (MySQLClient): 目标数据库的MySQLClient实例。
+            batch_size (int): 每批次处理的数据行数，默认为1000。
+        """
+        # 查询源表的总记录数
+        count_query = f"SELECT COUNT(*) FROM {src_table}"
+        total_rows = self._execute_query(count_query).scalar()
+        print(f"Total rows to be copied: {total_rows}")
+        
+        # 开始分批次复制
+        offset = 0
+        while offset < total_rows:
+            query = f"SELECT * FROM {src_table} LIMIT {batch_size} OFFSET {offset}"
+            data_to_copy = pd.read_sql(query, con=self.connection)
+            
+            # 使用pandas的to_sql方法将数据插入目标数据库
+            data_to_copy.to_sql(src_table, con=dest_client.connection, if_exists='append', index=False)
+            
+            offset += batch_size
+            print(f"Copied rows {offset} of {total_rows}")
 
             
 if __name__=="__main__":

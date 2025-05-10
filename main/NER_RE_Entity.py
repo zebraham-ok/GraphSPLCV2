@@ -31,7 +31,10 @@ def ai_entity_recognition(article_title, content):
                 "full_cn_name_dict": dict[原文中的组织实体名: 正式全称],
                 "pronoun_entity": dict[代词: 指代对象的正式中文全称]
             }
-            注意，这里的“组织实体”仅指企业、研究机构、政府机构等组织。回答时请严格基于事实，不要臆想
+            注意：
+            （1）这里的“组织实体”仅指企业、研究机构、政府机构等组织，必须是具体的名称；
+            （2）回答时请严格基于事实，不要臆想；
+            （3）请不要在json中使用嵌套引号和注释！
         '''%(article_title, content),
         system_instruction="你是一个商业信息采集员，擅长用json的标准化格式回答用户的提问",
         mode="json",
@@ -39,9 +42,16 @@ def ai_entity_recognition(article_title, content):
         temperature=0.05,
         enable_search=True
         )
+    if not ai_response:
+        print("ai_entity_recognition not responded by both qwen and gpt")
+        return {}
     try:
-        ai_dict=get_dict_from_str(ai_response)[0]
-        return ai_dict
+        ai_list=get_dict_from_str(ai_response)
+        if ai_list:
+            return ai_list[0]
+        else:
+            print("ai_entity_recognition is responded but cannot be turned into dict: ", ai_response)
+            return {}
     except Exception as e:
         print(e)
         return {}
@@ -67,7 +77,11 @@ def ai_relation_extraction_ORG_gpt(article_title, content, formal_entity_list,
                 "entity_type_dict": dict[entity: entity_type],
                 "relationship_list": list[dict["analysing_process": str, "source":entity, "relation_type":relation_type, "target": entity]]
             }
-            注意，（1）你仅需要识别allowed_relation_types和allowed_entity_types中的信息类型。（2）金融服务属于OfferFianceService，实际生产制造中的上下游之间提供货物，或生产性的服务才属于SupplyProductTo，基于技术专利等知识产权的授权属于GrantTechTo。（3）回答时请严格基于事实，不要臆想
+            注意:
+            （1）你仅需要识别allowed_relation_types和allowed_entity_types中的信息类型
+            （2）金融服务属于OfferFianceService，实际生产制造中的上下游之间提供货物，或生产性的服务才属于SupplyProductTo，基于技术专利等知识产权的授权属于GrantTechTo
+            （3）回答时请严格基于事实，不要臆想
+            （4）请不要在json中使用嵌套引号和注释！
         '''%(article_title, content, formal_entity_list, allowed_entity_types, allowed_relation_types),
         system_instruction="你是一个商业信息采集员，擅长用json的标准化格式回答用户的提问",
         mode="json",
@@ -76,8 +90,16 @@ def ai_relation_extraction_ORG_gpt(article_title, content, formal_entity_list,
         temperature=0,
         # enable_search=True
         )
+    if not ai_response:
+        print("ai_relation_extraction_ORG_gpt not responded by both qwen and gpt")
+        return {}
     try:
-        return get_dict_from_str(ai_response)
+        ai_list=get_dict_from_str(ai_response)
+        if ai_list:
+            return ai_list[0]
+        else:
+            print("ai_relation_extraction_ORG_gpt is responded but cannot be turned into dict: ", ai_response)
+            return {}
     except Exception as e:
         print(e)
         return {}
@@ -94,7 +116,12 @@ def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allow
                 "entity_type_dict": dict[entity: entity_type],
                 "relationship_list": list[dict["analysing_process": str, "source":entity, "relation_type":relation_type, "target": entity]]
             }
-            注意，（1）你仅需要识别allowed_relation_types和allowed_entity_types中的信息类型。（2）金融服务属于OfferFianceService，实际生产制造中的上下游之间提供货物，或生产性的服务才属于SupplyProductTo，基于技术专利等知识产权的授权属于GrantTechTo。（3）Factory和MiningSite都是从属于公司的，在生成它们的正式名称时应尽量带上其公司名（4）回答时请严格基于事实，不要臆想。
+            注意：
+            （1）你仅需要识别allowed_relation_types和allowed_entity_types中的信息类型
+            （2）金融服务属于OfferFianceService，实际生产制造中的上下游之间提供货物，或生产性的服务才属于SupplyProductTo，基于技术专利等知识产权的授权属于GrantTechTo
+            （3）Factory和MiningSite都是从属于公司的，在生成它们的正式名称时应尽量带上其公司名
+            （4）回答时请严格基于事实，不要臆想。
+            （5）请不要在json中使用嵌套引号和注释！
         '''%(article_title, content, formal_entity_list, allowed_entity_types, allowed_relation_types),
         system_instruction="你是一个商业信息采集员，擅长用json的标准化格式回答用户的提问",
         mode="json",
@@ -103,8 +130,16 @@ def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allow
         temperature=0,
         # enable_search=True
         )
+    if not ai_response:
+        print("ai_relation_extraction_ORG not responded by both qwen and gpt")
+        return {}
     try:
-        return get_dict_from_str(ai_response)[0]
+        ai_list=get_dict_from_str(ai_response)
+        if ai_list:
+            return ai_list[0]
+        else:
+            print("ai_relation_extraction_ORG is responded but cannot be turned into dict: ", ai_response)
+            return {}
     except Exception as e:
         print(e)
         return {}

@@ -81,7 +81,7 @@ def sql2neo4j_main(neo4j_host=None, max_workers=15):
         #         order by useful desc limit 1000""")
         result=sql_host._execute_query(query="""
                 select US_id, item, title, content, language, page_date from crawler_main
-                where load_time is null and content is not null and content_len<20000 and LEFT(page_date, 4)>"2019"
+                where load_time is null and content is not null and content_len<30000 and LEFT(page_date, 4)>"2019"
                 order by useful desc limit 1000""") # 暂时增加从2020年之后数据的导入
         result_list=result.fetchall()
         if len(result_list)==0:
