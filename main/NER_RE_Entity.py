@@ -2,7 +2,7 @@
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
-import json
+# import json
 import API.ai_ask
 import API.neo4j_SPLC
 from procedures.check_rubbish import check_rubbish
@@ -155,8 +155,8 @@ EMPTY_SLEEP = 600
 
 # Cypher查询模板
 SET_ENTITY_QUERY = """
-MATCH (startNode), (endNode)
-WHERE elementId(startNode) = $startNodeId AND elementId(endNode) = $endNodeId
+MATCH (startNode) WHERE elementId(startNode) = $startNodeId 
+MATCH (endNode) WHERE elementId(endNode) = $endNodeId
 SET endNode.qwen = true
 CREATE (startNode)-[rel:Mention]->(endNode)
 SET rel.qwen = true
@@ -220,15 +220,16 @@ class SectionProcessor:
         """创建实体节点和关系结构"""
         # 创建基础实体节点
         alias_rubbish_label=check_rubbish(alias)
+        canonical_rubbish_label=check_rubbish(canonical)
+        
         base_id = self.neo4j_host.Create_node(
         # Entity在文中的merge或许也可以为未来识别出同名词提供参考
-            "Entity", {"name": alias, "type": "ORG", "qwen": True, "rubbish": alias_rubbish_label}, merge=True
+            "Entity", {"name": alias, "qwen": True, "rubbish": alias_rubbish_label}, merge=True
         )
         
         # 创建规范实体节点
-        canonical_rubbish_label=check_rubbish(canonical)
         canonical_id = self.neo4j_host.Create_node(
-            "EntityObj", {"name": canonical, "type": "ORG", "qwen": True, "rubbish": canonical_rubbish_label}, merge=True
+            "EntityObj", {"name": canonical, "qwen": True, "rubbish": canonical_rubbish_label}, merge=True
         )
         entity_map[canonical] = canonical_id
         
@@ -237,7 +238,9 @@ class SectionProcessor:
             SET_ENTITY_QUERY,
             parameters={"startNodeId": section_id, "endNodeId": base_id}
         )
-        self.neo4j_host.Crt_rel_by_id(base_id, canonical_id, "FullNameIs")
+        result=self.neo4j_host.Crt_rel_by_id(base_id, canonical_id, "FullNameIs", start_node_label="Entity", end_node_label="EntityObj")
+        if "error" in result:
+            print(result)
         
         return canonical_id
 
@@ -283,7 +286,9 @@ class SectionProcessor:
                     source_id, 
                     target_id, 
                     relationship_type=relation_type,
-                    rel_attributes=rel_attr
+                    rel_attributes=rel_attr,
+                    start_node_label="EntityObj",
+                    end_node_label="EntityObj"
                 )
                 
                 # 对不是Company的工厂、矿山进行更名，以确保其不会重名（但这个可能会导致重复创建节点，所以暂时还是不要运行了），如果只是给Factory或MiningSite增加一个属性，有不足以确保他们在CreateNode方法中不会被其它企业的同名工厂给merge了。
@@ -314,7 +319,7 @@ class SectionProcessor:
             # 实体识别阶段
             entity_result = ai_entity_recognition(title, content)
             if not entity_result:
-                return
+                raise "Not a Dict"
             if entity_result.get("full_cn_name_dict"):                
                 # print(entity_result)
                 # 创建实体结构
@@ -358,7 +363,8 @@ class SectionProcessor:
             
         except Exception as e:
             print(f"处理章节 {section_id} 时发生错误: {str(e)}")
-            # 可以添加重试逻辑或错误记录
+            self.neo4j_host.execute_query("match (n) where elementid(n)=$id set n.find_entity=false", parameters={"id": section_id})
+            # 之后统一对错误记录进行检查
 
     def run_processing_loop(self):
         """主处理循环"""
@@ -384,8 +390,6 @@ class SectionProcessor:
             with tqdm(total=len(futures), desc="实体关系抽取") as pbar:
                 for _ in as_completed(futures):
                     pbar.update(1)
-                    
-            # break
 
 def ner_re_entity_main(neo4j_host=None, max_worker=10):
     "进行初步实体关系抽取"

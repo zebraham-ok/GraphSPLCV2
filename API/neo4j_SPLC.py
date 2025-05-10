@@ -1,6 +1,6 @@
 from neo4j import GraphDatabase
 from tqdm import tqdm
-import os
+# import os
 import random,time
 from .secret_manager import read_secrets_from_csv
 
@@ -150,12 +150,13 @@ class Neo4jClient():
             # 创建关系
             rel_attrs = ', '.join(f"{k}: ${k}" for k in rel_attributes.keys())
             query = f"""
-            MATCH (a:{start_node_label}), (b:{end_node_label})
-            WHERE a.name = $start_node_key AND b.name = $end_node_key
+            CYPHER notifications=WARN
+            MATCH (a:{start_node_label}) WHERE a.name = $start_node_key 
+            MATCH (b:{end_node_label}) WHERE b.name = $end_node_key
             MERGE (a)-[r:{relationship_type} {{{rel_attrs}}}]->(b)
             set r.createDate=Date()
             RETURN count(r) as created_count
-            """                                     # 注意，这里已经改为将name作为唯一标志
+            """     # 注意，这里已经改为将name作为唯一标志
             parameters = {**rel_attributes, 'start_node_key': start_node_name, 'end_node_key': end_node_name}
             result = self.execute_query(query, parameters, database=database)
             
@@ -168,7 +169,7 @@ class Neo4jClient():
             return f"An error occurred: {e}"
 
     # 创建关系by id（新）
-    def Crt_rel_by_id(self, start_node_id, end_node_id, relationship_type, rel_attributes={}, database="neo4j"):
+    def Crt_rel_by_id(self, start_node_id, end_node_id, relationship_type, start_node_label="", end_node_label="", rel_attributes={}, database="neo4j"):
         "通过节点id创建关系"
         try:
             # 检查起始节点和目标节点是否存在
@@ -180,11 +181,17 @@ class Neo4jClient():
             if not end_node_exists:
                 return f"Error: End node {end_node_id} does not exist."
             
+            # 建立label（这样可以提升匹配的效率）
+            if start_node_label:
+                start_node_label=":"+start_node_label
+            if end_node_label:
+                end_node_label=":"+end_node_label
+            
             # 创建关系
             rel_attrs = ', '.join(f"{k}: ${k}" for k in rel_attributes.keys())
             query = f"""
-            MATCH (a), (b)
-            WHERE ElementId(a) = $start_node_id AND ElementId(b) = $end_node_id
+            MATCH (a{start_node_label}) WHERE ElementId(a) = $start_node_id 
+            MATCH (b{end_node_label}) WHERE ElementId(b) = $end_node_id
             MERGE (a)-[r:{relationship_type} {{{rel_attrs}}}]->(b)
             set r.createDate=Date()
             RETURN count(r) as created_count"""

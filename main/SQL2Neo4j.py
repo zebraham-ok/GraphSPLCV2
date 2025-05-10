@@ -1,7 +1,7 @@
 # import API.ai_ask
 import API.neo4j_SPLC
 # neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver)
-
+import time
 from tqdm import tqdm
 
 from text_process.chunks import text_splitter_zh_en
@@ -13,6 +13,26 @@ sql_host=API.SQL_SPLC.generate_sql_host(database="splc")
 
 # 这个是从的新的crawler_main中执行导入
 import concurrent.futures
+
+CREATE_ARTICLE_SECTIONS_QUERY='''
+    CREATE (a:Article {title: $article.title})
+    SET 
+        a.url = $article.url,
+        a.pageTime = $article.pageTime,
+        a.language = $article.language,
+        a.createDate = datetime()
+
+    WITH a, $sections AS sections
+    UNWIND sections AS sec
+    CREATE (s:Section {content: sec.content})
+    SET 
+        s.position = sec.position,
+        s.len = sec.len,
+        s.createDate = datetime()
+    MERGE (s)-[:SectionOf]->(a)
+
+    RETURN count(DISTINCT s) AS section_count, a.title AS article_title
+'''
 
 def process_article_record(record, neo4j_host: API.neo4j_SPLC.Neo4jClient, spliter):
     "引入了判别模型"
@@ -41,14 +61,11 @@ def process_article_record(record, neo4j_host: API.neo4j_SPLC.Neo4jClient, split
         }
             
         # 创建文章对象
-        article_id=neo4j_host.Create_node(label="Article",attributes=article_data, set_date=True)
-        
-        sections_list = spliter.split_str(text=content)
-        for i in range(len(sections_list)):
-            sec_content=sections_list[i]
+        sections_content_list = spliter.split_str(text=content)
+        section_list_of_dict=[]
+        for i in range(len(sections_content_list)):
+            sec_content=sections_content_list[i]
             if sec_content and isinstance(sec_content, str) and len(sec_content)<4000:
-                # section_embedding=API.ai_ask.get_qwen_embedding(text=sec_content, dimensions=512)
-                # probas, section_useful=predict_text(embedding=section_embedding, mode="Section", threshold=0.2)
                 section_data = {
                     "content": sec_content,
                     "position": i,
@@ -57,9 +74,9 @@ def process_article_record(record, neo4j_host: API.neo4j_SPLC.Neo4jClient, split
                     # "embedding":section_embedding
                     # 这里其实应该引入向量化
                 }
-                # 创建section对象
-                section_id = neo4j_host.Create_node("Section", attributes=section_data)
-                neo4j_host.Crt_rel_by_id(start_node_id=section_id,end_node_id=article_id,relationship_type="SectionOf",rel_attributes={})
+                section_list_of_dict.append(section_data)
+                
+        neo4j_host.execute_query(CREATE_ARTICLE_SECTIONS_QUERY, parameters={"article": article_data, "sections": section_list_of_dict})
         
     # 将成功录入系统的条目，同时在SQL数据库中进行标记
     sql_host._execute_query(query='''
@@ -85,8 +102,11 @@ def sql2neo4j_main(neo4j_host=None, max_workers=15):
                 order by useful desc limit 1000""") # 暂时增加从2020年之后数据的导入
         result_list=result.fetchall()
         if len(result_list)==0:
-            break
+            print("没有要导入的章节了")
+            time.sleep(600)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             list(tqdm(executor.map(lambda record: process_article_record(record, neo4j_host, spliter), result_list), total=len(result_list), desc="文本导入Neo4j"))
-    # break
+
+if __name__=="__main__":
+    sql2neo4j_main(neo4j_host=None, max_workers=15)
