@@ -1,4 +1,4 @@
-import threading
+# 注意，这里merge的是Entity，不是EntityObj
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 

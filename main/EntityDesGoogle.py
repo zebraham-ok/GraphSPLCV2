@@ -389,7 +389,7 @@ def handle_same_entity_relation(neo4j_host: API.neo4j_SPLC.Neo4jClient, source_i
     ''', parameters={"name": full_cn_name})
     
     if target_node:
-        neo4j_host.Crt_rel_by_id(source_id, target_node[0]["id"], relationship_type="FullNameIs")
+        neo4j_host.Crt_rel_by_id(source_id, target_node[0]["id"], relationship_type="FullNameIs", set_date=False)
 
 def entity_des_main(neo4j_host=None, max_worker=4):
     "为实体生成描述"

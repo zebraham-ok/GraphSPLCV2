@@ -169,7 +169,7 @@ class Neo4jClient():
             return f"An error occurred: {e}"
 
     # 创建关系by id（新）
-    def Crt_rel_by_id(self, start_node_id, end_node_id, relationship_type, start_node_label="", end_node_label="", rel_attributes={}, database="neo4j"):
+    def Crt_rel_by_id(self, start_node_id, end_node_id, relationship_type, start_node_label="", end_node_label="", rel_attributes={}, database="neo4j", set_date=False):
         "通过节点id创建关系"
         try:
             # 检查起始节点和目标节点是否存在
@@ -186,14 +186,19 @@ class Neo4jClient():
                 start_node_label=":"+start_node_label
             if end_node_label:
                 end_node_label=":"+end_node_label
-            
+                
+            if set_date:
+                set_date_str="set r.createDate=Date()"
+            else:
+                set_date_str=""
+                
             # 创建关系
             rel_attrs = ', '.join(f"{k}: ${k}" for k in rel_attributes.keys())
             query = f"""
             MATCH (a{start_node_label}) WHERE ElementId(a) = $start_node_id 
             MATCH (b{end_node_label}) WHERE ElementId(b) = $end_node_id
             MERGE (a)-[r:{relationship_type} {{{rel_attrs}}}]->(b)
-            set r.createDate=Date()
+            {set_date_str}
             RETURN count(r) as created_count"""
             parameters = {**rel_attributes, 'start_node_id': start_node_id, 'end_node_id': end_node_id}
             result = self.execute_query(query, parameters, database=database)

@@ -238,7 +238,7 @@ class SectionProcessor:
             SET_ENTITY_QUERY,
             parameters={"startNodeId": section_id, "endNodeId": base_id}
         )
-        result=self.neo4j_host.Crt_rel_by_id(base_id, canonical_id, "FullNameIs", start_node_label="Entity", end_node_label="EntityObj")
+        result=self.neo4j_host.Crt_rel_by_id(base_id, canonical_id, "FullNameIs", start_node_label="Entity", end_node_label="EntityObj", set_date=False)
         if "error" in result:
             print(result)
         
@@ -288,7 +288,8 @@ class SectionProcessor:
                     relationship_type=relation_type,
                     rel_attributes=rel_attr,
                     start_node_label="EntityObj",
-                    end_node_label="EntityObj"
+                    end_node_label="EntityObj",
+                    set_date=True
                 )
                 
                 # 对不是Company的工厂、矿山进行更名，以确保其不会重名（但这个可能会导致重复创建节点，所以暂时还是不要运行了），如果只是给Factory或MiningSite增加一个属性，有不足以确保他们在CreateNode方法中不会被其它企业的同名工厂给merge了。
