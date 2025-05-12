@@ -17,14 +17,14 @@ def main_end():
     with ThreadPoolExecutor(max_workers=4) as executor:
         future1 = executor.submit(ner_re_entity_main, neo4j_host, 10)
         # future2 = executor.submit(entity_des_main, neo4j_host, 5)
-        future3 = executor.submit(sql2neo4j_main, neo4j_host, 8)
-        future4 = executor.submit(qwen_embedding_entityobj, neo4j_host, 3)
+        # future3 = executor.submit(sql2neo4j_main, neo4j_host, 8)
+        # future4 = executor.submit(qwen_embedding_entityobj, neo4j_host, 3)
         
         # 等待两个任务完成（可选）
         future1.result()
         # future2.result()
-        future3.result()
-        future4.result()
+        # future3.result()
+        # future4.result()
 
 if __name__ == "__main__":
     main_end()
