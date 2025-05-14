@@ -4,15 +4,16 @@
 from Neo4jHost import get_remote_driver
 neo4j_host=get_remote_driver()
 
-from procedures.output_relfection import *
+from procedures.output_backup import *
 import os
 
 exporter=Neo4jExporter(neo4j_host)
-output_path=r"result\YearOutput"
+G_dict=exporter.export_supply_relations_by_year(start_year=2013, end_year=2025)
 
-for year in range(2014, 2026):
+output_path=r"result\YearOutput"
+for year, G in G_dict.items():
     file_path=os.path.join(output_path, f"{year}.graphml")
-    G=exporter.export_supply_relations_by_year(year=year)
     G=adapt_to_export_form(G)
+    G=category_4_level(G)
     nx.write_graphml(G, file_path)
     print(f"Year {year} Network: {len(G.nodes())} nodes, {len(G.edges())} edges")

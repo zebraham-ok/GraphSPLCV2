@@ -113,8 +113,7 @@ if __name__=='__main__':
         mongo_host=None
     
     while True:
-        result=sql_host._execute_query(query="select US_id, title, des from crawler_main where load_time is null and useful is null and content is not null and (title is not null or des<>'') limit 500")
-        result_list=result.fetchall()
+        result_list=sql_host._execute_query(query="select US_id, title, des from crawler_main where load_time is null and useful is null and content is not null and (title is not null or des<>'') limit 500")
         if not result_list:
             break
         

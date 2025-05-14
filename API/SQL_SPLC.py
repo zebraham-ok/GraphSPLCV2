@@ -39,7 +39,7 @@ class MySQLClient:
         if self.connection:
             self.connection.close()
 
-    def _execute_query(self, query, params=None, timeout=30, retries=1):
+    def _execute_query(self, query, params=None, timeout=30, retries=1, dict_mode=False):
         """执行SQL查询，支持超时终止和自动重试"""
         attempt = 0
         while attempt <= retries:
@@ -48,7 +48,10 @@ class MySQLClient:
                     # 设置执行选项
                     conn.execution_options(timeout=timeout)
                     result_proxy = conn.execute(text(query), params)
-                    return result_proxy
+                    if dict_mode:
+                        return result_proxy.mappings().all()
+                    else:
+                        return result_proxy.fetchall()
             except (OperationalError, TimeoutError, ProgrammingError) as e:
                 if attempt < retries:
                     print(f"Query execution failed, retrying... Attempt {attempt + 1}/{retries}")
@@ -105,7 +108,7 @@ class MySQLClient:
         """
         query = f"SELECT * FROM {table_name}"
         result_proxy = self._execute_query(query)
-        return pd.DataFrame(result_proxy.fetchall(), columns=result_proxy.keys())
+        return pd.DataFrame(result_proxy, columns=result_proxy.keys())
     
     def create_table_from_dict(self, table_name, dict_data):
         """
@@ -115,7 +118,7 @@ class MySQLClient:
         :param dict_data: 要插入的字典数据
         """
         query = f"SHOW TABLES LIKE '{table_name}'"
-        result = self._execute_query(query).fetchone()
+        result = self._execute_query(query)
         
         if result:
             existing_table_fields = self.get_table_fields(table_name)
@@ -139,7 +142,7 @@ class MySQLClient:
         :return: 字典，键为 key_column 的值，值为 value_column 的值
         """
         query = f"SELECT {key_column}, {value_column} FROM {table_name}"
-        result = self._execute_query(query).fetchall()
+        result = self._execute_query(query)
         return {row[0]: row[1] for row in result}
 
     def create_or_insert_list(self, table_name, list_data):
@@ -150,7 +153,7 @@ class MySQLClient:
         :param list_data: 要插入的列表数据
         """
         query = f"SHOW TABLES LIKE '{table_name}'"
-        result = self._execute_query(query).fetchone()
+        result = self._execute_query(query)
         
         if result:
             existing_table_fields = self.get_table_fields(table_name)
@@ -241,7 +244,11 @@ class MySQLClient:
         else:
             query = f"SELECT 1 FROM {table_name} WHERE {column_name} like :item"
             result = self._execute_query(query, {"item": f"%{item}%"})
-        return result.fetchone() is not None
+
+        if result:
+            return True
+        else:
+            return False
     
     def reflect_of_column_value(self, table_name, key, key_column="dict_key",value_column="dict_value",if_missing=None):
         """
@@ -250,8 +257,7 @@ class MySQLClient:
         """
         query = f"SELECT {value_column} FROM {table_name} WHERE {key_column} = (:key_content)"
         try:
-            result_proxy = self._execute_query(query,params={"key_content":key})
-            results = result_proxy.fetchone()
+            results = self._execute_query(query,params={"key_content":key})
             if results:
                 return results[0]
             elif if_missing=="key_back":
@@ -274,8 +280,7 @@ class MySQLClient:
         """
         query = f"SELECT {key_column} FROM {table_name} WHERE {value_column} = (:value)"
         try:
-            result_proxy = self._execute_query(query, params={"value": value})
-            results = result_proxy.fetchall()
+            results = self._execute_query(query, params={"value": value})
             keys = [result[0] for result in results]        # 提取每个结果的第一列（即key_column的值）
             
             return keys

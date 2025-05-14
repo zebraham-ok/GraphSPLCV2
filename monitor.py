@@ -70,7 +70,7 @@ def get_load_done_ratio():
             FROM `crawler_main`
         ) AS subquery;
     """
-    result = sql_host._execute_query(query).fetchall()
+    result = sql_host._execute_query(query)
     return result[0][-1]
 
 def monitor_and_plot():
