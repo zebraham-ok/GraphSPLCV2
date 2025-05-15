@@ -8,9 +8,9 @@ from procedures.output_relfection import *
 import os
 
 exporter=Neo4jExporter(neo4j_host)
-output_path=r"result\YearOutput"
+output_path=r"result\YearOutputOri"
 
-for year in range(2014, 2026):
+for year in range(2013, 2026):
     file_path=os.path.join(output_path, f"{year}.graphml")
     G=exporter.export_supply_relations_by_year(year=year)
     G=adapt_to_export_form(G)

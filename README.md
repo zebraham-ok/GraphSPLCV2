@@ -96,6 +96,10 @@
 + 目前使用的Neo4j路径：E:\Coding\Neo4j\SPLC_Database
 + 数据库备份的正确方法：neo4j-admin database dump neo4j --to-path="E:\Coding\Neo4j\Backup"
 
+# 数据合规说明
++ 在爬虫层面，我们没有刻意绕过网站的反爬系统，基本上不构成问题
++ 在数据出境层面，可能构成问题，按照《数据出境安全评估申报指南（第二版）》，可能需要在网信办进行申报：https://www.cac.gov.cn/2024-03/22/c_1712783131692707.htm
+
 # 尝试的历程
 + Weaviate虽然向量检索很快，但向量检索并不是必须项，其实Neo4j也可以做
 + Embedding虽然可能有更好的本地方案，但是确实太慢了，租服务器来做又很难充分利用算力，因此就用通义千问V3了

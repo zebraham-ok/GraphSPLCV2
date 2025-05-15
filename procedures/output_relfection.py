@@ -8,8 +8,8 @@ from collections import Counter
 from numpy import nan
 
 LABEL_PRIORITY = [
-    "Media", "MiningSite", "Government", "Academic", "NGO", 
-    "Company", "Factory", "Others", "EntityObj"
+    "Company", "Government", "Media", "MiningSite", "Academic", 
+    "NGO", "Factory", "Others", "EntityObj"
 ]
 
 # 如果一个节点已经存在于MySQL的company_main当中了，NODE_ATTR中的属性会优先听从company_main中的投票结果，仅当company_main中是空值的时候，才会看NODE_ATTR里面的情况
@@ -86,7 +86,6 @@ class Neo4jExporter:
                 r_collect_query+=f", COLLECT(r.{attr}) as r_{attr}"
                 r_attr_query+=f", r_{attr}"
             
-            
             if year:
                 year_argument=f" and r.time contains '{year}'"
             elif start_year and end_year:
@@ -98,24 +97,12 @@ class Neo4jExporter:
                 MATCH (n:EntityObj)-[r:SupplyProductTo]->(m:EntityObj)
                 where n.rubbish <> true and m.rubbish <> true and r.verified <> "suspected"{year_argument}
                 WITH n, m, COUNT(r) AS rel_count {r_collect_query}
-                OPTIONAL MATCH (n)-[:FullNameIs]->(n_full)
-                WITH n, m, rel_count{r_attr_query},
-                    COLLECT(n_full.name) AS n_names
-                OPTIONAL MATCH (m)-[:FullNameIs]->(m_full)
-                WITH n, m, rel_count{r_attr_query}, n_names,
-                    COLLECT(m_full.name) AS m_names
                 RETURN 
-                    COALESCE(
-                        REDUCE(longest = n.name, name IN n_names | 
-                            CASE WHEN size(name) > size(longest) THEN name ELSE longest END
-                        ), n.name) AS supplier,
+                    n.name AS supplier,
                     {s_attr_query}
                     labels(n) as s_labels,
                     elementid(n) as s_id,
-                    COALESCE(
-                        REDUCE(longest = m.name, name IN m_names | 
-                            CASE WHEN size(name) > size(longest) THEN name ELSE longest END
-                        ), m.name) AS customer,
+                    m.name AS customer,
                     {c_attr_query}
                     labels(m) as c_labels,
                     elementid(m) as c_id,
@@ -153,7 +140,8 @@ class Neo4jExporter:
             sql_result=self.sql._execute_query(sql_query, params={"name": name}, dict_mode=True)
             if sql_result:
                 sql_result_dict=sql_result[0]
-                return sql_result_dict, sql_result_dict.get("semi_name")
+                return sql_result_dict, sql_result_dict.get("entity_cn_name")
+                # 如果要导出英文，直接修改这个为entity_en_name就可以了
             else:
                 return {}, ""
         
