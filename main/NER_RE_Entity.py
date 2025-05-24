@@ -67,6 +67,7 @@ def ai_relation_extraction_ORG_gpt(article_title, content, formal_entity_list,
                                    allowed_entity_types=ALLOWED_ENTITY_TYPES_FOR_ORG, 
                                    allowed_relation_types=ALLOWED_RELATION_TYPES_FOR_ORG, model="gpt-4o"):
     "用大模型检查一个content当中各个机构之间是否有给定类型的关系"
+    # 这个提示词可能会导致，大模型忽略了一些中断信息，把它当做是不具有供应关系的体现
     ai_response=API.ai_ask.ask_gpt(prompt_text='''
             请查看如下文本片段，严格依照原文文本内容，按照如下步骤，结合你检索到的知识完成任务：
             {"title": %s, "section_content": %s, "entity_list": %s, "allowed_entity_types": %s, "allowed_relation_types": %s}
@@ -80,8 +81,9 @@ def ai_relation_extraction_ORG_gpt(article_title, content, formal_entity_list,
             注意:
             （1）你仅需要识别allowed_relation_types和allowed_entity_types中的信息类型
             （2）金融服务属于OfferFianceService，实际生产制造中的上下游之间提供货物，或生产性的服务才属于SupplyProductTo，基于技术专利等知识产权的授权属于GrantTechTo
-            （3）回答时请严格基于事实，不要臆想
-            （4）请不要在json中使用嵌套引号和注释！
+            （3）对于公司间中断供货、终止客户关系等现象，也要以SupplyProductTo的形式进行记录，毕竟这表明该关系曾经存在
+            （4）回答时请严格基于事实，不要臆想
+            （5）请不要在json中使用嵌套引号和注释！
         '''%(article_title, content, formal_entity_list, allowed_entity_types, allowed_relation_types),
         system_instruction="你是一个商业信息采集员，擅长用json的标准化格式回答用户的提问",
         mode="json",

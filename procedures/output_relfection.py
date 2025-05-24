@@ -63,7 +63,8 @@ class GraphBuilder:
         return ""
 
 class Neo4jExporter:
-    def __init__(self, neo4j_host:neo4j_SPLC.Neo4jClient, sql_host: SQL_SPLC.MySQLClient = sql_host, node_attr_list=NODE_ATTR, rel_attr_list=EDGE_ATTR):
+    def __init__(self, neo4j_host:neo4j_SPLC.Neo4jClient, sql_host: SQL_SPLC.MySQLClient = sql_host, 
+                 node_attr_list=NODE_ATTR, rel_attr_list=EDGE_ATTR):
         self.neo = neo4j_host
         self.sql = sql_host
         self.batch_size = 500

@@ -39,7 +39,7 @@ class MySQLClient:
         if self.connection:
             self.connection.close()
 
-    def _execute_query(self, query, params=None, timeout=30, retries=1, dict_mode=False):
+    def _execute_query(self, query, params=None, timeout=30, retries=1, dict_mode=False, unpack=True):
         """执行SQL查询，支持超时终止和自动重试"""
         attempt = 0
         while attempt <= retries:
@@ -48,10 +48,12 @@ class MySQLClient:
                     # 设置执行选项
                     conn.execution_options(timeout=timeout)
                     result_proxy = conn.execute(text(query), params)
-                    if dict_mode:
+                    if dict_mode and unpack:
                         return result_proxy.mappings().all()
-                    else:
+                    elif unpack:
                         return result_proxy.fetchall()
+                    else:
+                        return result_proxy
             except (OperationalError, TimeoutError, ProgrammingError) as e:
                 if attempt < retries:
                     print(f"Query execution failed, retrying... Attempt {attempt + 1}/{retries}")
@@ -198,7 +200,7 @@ class MySQLClient:
             f"INSERT {ignore} INTO {table_name} ({column_names}) VALUES ({place_holders}) "
             f"ON DUPLICATE KEY UPDATE {set_clause}"
         )
-        self._execute_query(insert_query, params=data)
+        self._execute_query(insert_query, params=data, unpack=False)
 
     def insert_multiple_rows(self, table_name, list_data, column_names:list, ignore="IGNORE"):
         """
@@ -225,7 +227,7 @@ class MySQLClient:
         
         for row in list_data:
             params={column_names[i]:row[i] for i in range(len(column_names))}
-            self._execute_query(query=sql_insert_query,params=params)
+            self._execute_query(query=sql_insert_query,params=params, unpack=False)
             
     def check_item_exists(self, table_name, item, column_name="item", strict_equal=True):
         """
