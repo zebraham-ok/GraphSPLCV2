@@ -13,7 +13,7 @@ LABEL_PRIORITY = [
 ]
 
 # 如果一个节点已经存在于MySQL的company_main当中了，NODE_ATTR中的属性会优先听从company_main中的投票结果，仅当company_main中是空值的时候，才会看NODE_ATTR里面的情况
-NODE_ATTR = ["country", "industry_1st", "industry_2nd", "category_1st", "category_2nd", "category_3rd"]
+NODE_ATTR = ["country", "industry_1st", "industry_2nd", "category_1st", "category_2nd", "category_3rd","description"]
 
 EDGE_ATTR = ["product", "product_category", "status"]
 

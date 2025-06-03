@@ -115,6 +115,13 @@ class Neo4jHandler:
             parameters={'id': r_id}
         )
         
+    def mark_as_reversed(self, r_id):
+        """标记关系为可疑"""
+        self.client.execute_query(
+            "MATCH ()-[r]->() WHERE elementid(r)=$id SET r.verified='reversed'",
+            parameters={'id': r_id}
+        )
+        
     def mark_as_name_not_align(self, r_id):
         """标记关系为可疑"""
         self.client.execute_query(
@@ -173,7 +180,8 @@ def process_record(record, neo_handler: Neo4jHandler):
         if ai_result['customer'] == record['customer']:
             neo_handler.update_relationship(record['r_id'], attrs)
         else:
-            neo_handler.mark_as_suspected(record['r_id'])
+            # 在新的版本中，使用reversed来标记，以免分不清哪些关系是重复的（true+suspected就是原始的，reversed可以不看）
+            neo_handler.mark_as_reversed(record['r_id'])
             neo_handler.create_reverse_relationship(c_id, s_id, attrs)
             
     except Exception as e:
