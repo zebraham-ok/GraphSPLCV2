@@ -60,7 +60,8 @@ def ai_entity_recognition(article_title, content):
 # allowed_entity_types={"Company": "商业性的企业", "Government": "中央政府、地方政府或联合国机构", "Academic": "大学或研究所", "NGO": "非营利性组织和社团", "Others": "其它类型的组织，或非组织的、意义不明的字符串"}
 
 ALLOWED_ENTITY_TYPES_FOR_ORG={"Company", "Factory", "Government", "MiningSite", "Academic", 'Media', "NGO", "Others", "Factory"}
-ALLOWED_RELATION_TYPES_FOR_ORG={"SupplyProductTo", "OwnFactory", "OwnMiningSite", "PartnerOf", "OfferFianceService", "WinBidFor", "SubsidiaryOf", "GrantTechTo"}
+ALLOWED_RELATION_TYPES_FOR_ORG={"SupplyProductTo", "OwnFactory", "OwnMiningSite", "PartnerOf", "OfferFianceService", "WinBidFor", "SubsidiaryOf", "GrantTechTo","IsSalesAgentOf"}
+# 增加了一个销售代理关系，以与供货关系相区别
 
 
 def ai_relation_extraction_ORG_gpt(article_title, content, formal_entity_list,                              
