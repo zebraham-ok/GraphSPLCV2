@@ -22,7 +22,7 @@ def ai_splc_verify_tackle_error_no_des(supplier, customer, content):
             请依照原文文本内容，按照如下步骤，鉴别两个实体之间是否存在供应链关系，步骤如下：
             0. 首先请分析表格的section_content是什么页面，将分析过程写在analyze_page处，并将判断结果写在page_element中。请从如下选项中选择：{page_elements}
             1. 请查看{supplier}和{customer}这两个实体，在analyze_entity处分析它们是否是一个具体公司、政府或组织的名称，如果是请在specific_entity处返回true，否则返回false（除非供货内容为军火，否则国家名不属于具体的组织名称）
-            2. 供应商是提供产品或服务并收取费用的一方，-客户是接受产品或服务并付费的一方。请分析section_content中的信息是否有足够多的证据直接说明{supplier}和{customer}之间存在“供应商-客户”关系？如果有，谁是供应商谁是客户？请先在analyze_relationship处简要写出你的推断过程。要结合section_content所处的page_element思考文本的内涵。
+            2. 供应商是提供产品或服务并收取费用的一方，客户是接受产品或服务并付费的一方。请分析section_content中的信息是否有足够多的证据直接说明{supplier}和{customer}之间存在“供应商-客户”关系？如果有，谁是供应商谁是客户？请先在analyze_relationship处简要写出你的推断过程。要结合section_content所处的page_element思考文本的内涵。
             3. 原文是否有充足证据表明两个实体存在“供应商-客户”关系？请在exist_relationship位置，如果有供应关系请填写true，如果没有填写false。
             4. 如果存在，你认为在{supplier}和{customer}当中，哪个是供应商？哪个是客户？请两个实体的名称写在supplier和customer中适合的位置。
             5. 请判断该供应关系是暂时性的（Temporary）如一次性的中标；持续性的（Continuous）供货；未来可能的（Future）；还是已经断供或终止（Stopped），在这三个单词当中选择一个填写在status位置。
@@ -65,7 +65,7 @@ class Neo4jHandler:
     def __init__(self, neo4j_host=API.neo4j_SPLC.Neo4jClient()):
         self.client = neo4j_host
         
-    def fetch_records(self, batch_size=50):
+    def fetch_records(self, batch_size=1000):
         """获取未验证的供应链关系记录"""
         # query = '''
         # MATCH (n)-[r:SupplyProductTo]->(m), (s:Section)

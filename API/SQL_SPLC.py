@@ -48,12 +48,15 @@ class MySQLClient:
                     # 设置执行选项
                     conn.execution_options(timeout=timeout)
                     result_proxy = conn.execute(text(query), params)
-                    if dict_mode and unpack:
-                        return result_proxy.mappings().all()
-                    elif unpack:
-                        return result_proxy.fetchall()
+                    if "select" in query or "SELECT" in query:
+                        if dict_mode and unpack:
+                            return result_proxy.mappings().all()
+                        elif unpack:
+                            return result_proxy.fetchall()
+                        else:
+                            return result_proxy
                     else:
-                        return result_proxy
+                        return None
             except (OperationalError, TimeoutError, ProgrammingError) as e:
                 if attempt < retries:
                     print(f"Query execution failed, retrying... Attempt {attempt + 1}/{retries}")
