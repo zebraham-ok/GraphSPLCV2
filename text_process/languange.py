@@ -1,6 +1,15 @@
 from numpy import argmin,argmax
 from numpy import isnan
+from langdetect import detect_langs
 import re
+
+def detext_lang_2(text:str):
+    "检查并返回2位表示文本语言的字符串"
+    try:
+        result=detect_langs(text)[0].lang[:2]
+        return result
+    except Exception as e:
+        return None
     
 def transform_company_id(company_id):
     temp_str=company_id.split(" ")

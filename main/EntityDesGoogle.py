@@ -90,10 +90,11 @@ def process_single_entity(neo4j_host, entity_data):
     primary_label = labels[0] if labels else "Unknown"
     
     google_info_extracted=get_google_info(entity_name)
-        
+    
     # 获取AI增强信息
     ai_cate = get_ai_enriched_category(entity_name, enrich_info=google_info_extracted)
     ai_info = get_ai_enriched_info(entity_name, primary_label, enrich_info=google_info_extracted)
+    ai_name = get_ai_enriched_name(entity_name, enrich_info=google_info_extracted)
     # print(ai_info)
     # print(ai_cate)
     
@@ -106,8 +107,8 @@ def process_single_entity(neo4j_host, entity_data):
     industry_1=ai_cate.get("industry_1st", "")
     industry_2=ai_cate.get("industry_2nd", "")
     
-    # 先将这个全名取出来，以免被更新到neo4j中
-    full_cn_name=ai_info.pop("full_cn_name")
+    # 先将这个名字取出来，以免被更新到neo4j中
+    full_cn_name=ai_info.pop("name")
     
     # 更新节点属性
     all_data={**ai_info, **ai_cate}
@@ -298,8 +299,8 @@ def get_ai_enriched_info(entity_name, label, enrich_info=""):
         请你根据上述信息，告诉我【{entity_name}】是一个什么样的{label}
         回答的具体json格式如下所示：
         {{
+            "name": str,
             "analysis": str, 
-            "full_cn_name": str,
             "synonym_name_list": list[str]
             "country": str,
             "contain_stock_info": bool,
@@ -307,12 +308,11 @@ def get_ai_enriched_info(entity_name, label, enrich_info=""):
             "stock_code_list": list[str],
         }}
         1. 请将你对后续问题的分析过程写在analysis位置
-        2. 如果你认为{entity_name}不是该实体的正式全称，请在full_cn_name处给出其正式全称，并尽量使用中文。如果实在没有合适的中文名，也可以使用原来语言的正式名称；
-        3. 在country位置，请用中文给出企业所在国家或地区的中文简称，如“美国”、“日本”、“中国台湾”，“中国大陆”等；
-        4. 在synonym_name_list处，请你用中文、英文以及该企业所在国家的语言，给出它的其它常见名称同义词；
-        5. 该企业是否是上市公司？如果原文中包含{entity_name}的股票代码信息，请在contain_stock_info处返回true，否则返回false；
-        6. 一个公司可能在不同地方上市从而有多个股票标签，如果原文确实包含{entity_name}的股票ticker信息，请将它的Token写在stock_ticker_list处（如：["NVDA"]和["贵州茅台"]），否则返回空列表；
-        7. 如果原文确实包含{entity_name}的股票代码，请将它的股票代码以list of string的形式写在stock_code_list处（以数据.市场代码的格式，如：0000.KS或XXXX.NAS或1111.SH），否则请在stock_code_list处返回空列表。
+        2. 在country位置，请用中文给出企业所在国家或地区的中文简称，如“美国”、“日本”、“中国台湾”，“中国大陆”等；
+        3. 在synonym_name_list处，请你用中文、英文以及该企业所在国家的语言，给出它的其它常见名称同义词；
+        4. 该企业是否是上市公司？如果原文中包含{entity_name}的股票代码信息，请在contain_stock_info处返回true，否则返回false；
+        5. 一个公司可能在不同地方上市从而有多个股票标签，如果原文确实包含{entity_name}的股票ticker信息，请将它的Token写在stock_ticker_list处（如：["NVDA"]和["贵州茅台"]），否则返回空列表；
+        6. 如果原文确实包含{entity_name}的股票代码，请将它的股票代码以list of string的形式写在stock_code_list处（以数据.市场代码的格式，如：0000.KS或XXXX.NAS或1111.SH），否则请在stock_code_list处返回空列表。
         注意：你提供的信息必须依据原文材料，真实、准确、可靠。
     '''
             
@@ -336,7 +336,53 @@ def get_ai_enriched_info(entity_name, label, enrich_info=""):
     except Exception as e:
         print(f"Error in get_ai_enriched_info {e}")
         return {}
-        
+    
+@retry(max_retries=3)
+def get_ai_enriched_name(entity_name, enrich_info=""):
+    """获取AI增强信息（带重试机制）"""
+    prompt_text=f'''
+        {enrich_info}
+        请你结合上述信息，给出有关【{entity_name}】在主要语言中的常见名称
+        回答的具体json格式如下所示：
+        {{
+            "original_name": str,
+            "analysis": str, 
+            "most_common_name": str,
+            "en_name": str,
+            "cn_name": str,
+            "local_name", str,
+            "short_name": str,
+        }}
+        1. 请在original_name处重复一遍原来的名称：{entity_name}；
+        2. 在analysis位置，分析文本中对于该公司全称、简称及其国家信息，分析它的最常见名、英文名、中文名、所属国语言名、简称分别应该是什么；
+        3. 在most_common_name的位置，填写该组织实体在各类商业文本中最常见的称呼；
+        4. 在en_name位置，填写英文全名；
+        5. 在cn_name位置，填写中文全名；
+        6. 在local_name位置，填写该组织实体所在国的语言名；
+        7. 在short_name位置，填写该组织实体的简称；
+        注意：你提供的信息必须依据原文材料，真实、准确、可靠。
+    '''
+            
+    response = API.ai_ask.ask_qwen_with_gpt_backup(
+        prompt_text=prompt_text,
+        system_instruction="你是一个商业信息情报员，提供json格式的准确结构化数据",
+        temperature=0,
+        enable_search=True,
+        mode="json",
+        model="qwen-turbo",
+        retry_model="gpt-3.5-turbo"
+    )
+            
+    if not response:
+        print(f"description for {entity_name} generation failed")
+        return None
+    
+    try:
+        ai_dict=get_dict_from_str(response)[0]
+        return ai_dict
+    except Exception as e:
+        print(f"Error in get_ai_enriched_info {e}")
+        return {}
 
 def validate_ai_info_response(data: dict):
     """验证AI返回数据结构"""
