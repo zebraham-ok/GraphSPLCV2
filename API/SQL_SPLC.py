@@ -39,7 +39,7 @@ class MySQLClient:
         if self.connection:
             self.connection.close()
 
-    def _execute_query(self, query, params=None, timeout=30, retries=1, dict_mode=False, unpack=True):
+    def _execute_query(self, query:str, params=None, timeout=30, retries=1, dict_mode=False, unpack=True):
         """执行SQL查询，支持超时终止和自动重试"""
         attempt = 0
         while attempt <= retries:
@@ -48,7 +48,7 @@ class MySQLClient:
                     # 设置执行选项
                     conn.execution_options(timeout=timeout)
                     result_proxy = conn.execute(text(query), params)
-                    if "select" in query or "SELECT" in query:
+                    if "SELECT" in query.upper():
                         if dict_mode and unpack:
                             return result_proxy.mappings().all()
                         elif unpack:

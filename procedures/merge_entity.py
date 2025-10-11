@@ -23,7 +23,10 @@ def process_dup_entity(record, neo4j_host:API.neo4j_SPLC.Neo4jClient):
         print(f"Error processing record {record}: {e}")
         
 def merge_node_by_id(node_id_list, neo4j_host:API.neo4j_SPLC.Neo4jClient):
-    "根据elementid对数据库中的node进行合并，并保留node_id_list中的最后一个节点，其余节点会被删除"
+    "根据elementid对数据库中的node进行合并，并保留node_id_list中的最后一个节点，其余节点会被删除（node_id_list中不能有重复项）"
+    if len(node_id_list)!=len(set(node_id_list)):
+        print(f"警告！node_id_list: {node_id_list}当中存在重复项！不能合并")
+        return
     all_incoming = []
     all_outgoing = []
     

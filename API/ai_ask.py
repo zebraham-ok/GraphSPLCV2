@@ -81,7 +81,7 @@ def get_qwen_embedding(
     参数:
     text -- 需要编码的文本内容（必填）
     model -- 模型名称（默认text-embedding-v3）
-    dimensions -- 向量维度（默认1024，可选512/1024/1536）
+    dimensions -- 向量维度（默认1024，可选64/128/256/512/1024/1536）
     encoding_format -- 编码格式（默认float）
     
     返回:

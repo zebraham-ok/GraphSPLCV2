@@ -146,7 +146,7 @@ class LiangGoogleAPI4Company:
                 collection=self.default_collection,
                 # projection=projection,
                 limit=1,
-                sort_list_dict=[{"timestamp", -1}]
+                sort_list_dict=[("timestamp", -1)]
             )
             
             # if latest_cache and self._is_cache_valid(latest_cache[0]):
