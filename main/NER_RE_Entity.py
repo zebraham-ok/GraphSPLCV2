@@ -50,7 +50,7 @@ def ai_entity_recognition(article_title, content):
         if ai_list:
             return ai_list[0]
         else:
-            print("ai_entity_recognition is responded but cannot be turned into dict: ", ai_response)
+            print("ai_entity_recognition is responded but cannot be turned into dict: ", ai_response, "\n", "the original section content is like this: ", article_title+": "+content)
             return {}
     except Exception as e:
         print(e)
@@ -107,7 +107,7 @@ def ai_relation_extraction_ORG_gpt(article_title, content, formal_entity_list,
         print(e)
         return {}
     
-def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allowed_entity_types=ALLOWED_ENTITY_TYPES_FOR_ORG, allowed_relation_types=ALLOWED_RELATION_TYPES_FOR_ORG):
+def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allowed_entity_types=ALLOWED_ENTITY_TYPES_FOR_ORG, allowed_relation_types=ALLOWED_RELATION_TYPES_FOR_ORG, model="qwen3-max", enable_thinking=False):
     "用大模型检查一个content当中各个机构之间是否有给定类型的关系"
     ai_response=API.ai_ask.ask_qwen_with_gpt_backup(prompt_text='''
             请查看如下文本片段，严格依照原文文本内容，按照如下步骤，结合你检索到的知识完成任务：
@@ -129,9 +129,11 @@ def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allow
         system_instruction="你是一个商业信息采集员，擅长用json的标准化格式回答用户的提问",
         mode="json",
         # model="llama-4-maverick-17b-128e-instruct",
-        model="deepseek-r1-distill-llama-8b",
+        # model="deepseek-r1-distill-llama-8b",
+        model=model,
         temperature=0,
         # enable_search=True
+        enable_thinking=enable_thinking
         )
     if not ai_response:
         print("ai_relation_extraction_ORG not responded by both qwen and gpt")
@@ -141,7 +143,7 @@ def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allow
         if ai_list:
             return ai_list[0]
         else:
-            print("ai_relation_extraction_ORG is responded but cannot be turned into dict: ", ai_response)
+            print("ai_relation_extraction_ORG is responded but cannot be turned into dict: ", ai_response, "\n", "the original section content is like this: ", article_title+": "+content)
             return {}
     except Exception as e:
         print(e)
@@ -264,7 +266,7 @@ class SectionProcessor:
                 
         return entity_map, full_name_dict
 
-    def process_relationships(self, relationships, entity_map, section_id, original_content, url, time_stamp=""):
+    def process_relationships(self, relationships, entity_map, section_id, original_content, url, time_stamp="", model=None):
         """处理关系抽取结果"""
         for rel in relationships:
             source_id = entity_map.get(rel["source"])
@@ -280,6 +282,10 @@ class SectionProcessor:
                         "url": url,
                         "qwen": True
                     }
+            # 方便统计对每一个连边负有责任的模型
+            if model:
+                rel_attr["model"]=model
+            
             if time_stamp:
                 rel_attr["time"]=time_stamp
             
@@ -305,7 +311,7 @@ class SectionProcessor:
                 #         set a.name = a.name + '-' + c.name
                 #     ''', parameters = {"asset_id": target_id, "company_id": source_id})
 
-    def process_single_section(self, record):
+    def process_single_section(self, record, model):
         """单个章节的处理流水线"""
         try:
             section_id = record["id"]
@@ -333,7 +339,8 @@ class SectionProcessor:
                 relation_result = ai_relation_extraction_ORG(
                     content, 
                     title, 
-                    list(entity_map.keys())
+                    formal_entity_list=list(entity_map.keys()),
+                    model=model
                 )
                 
                 # print("relation result: ", relation_result)
@@ -356,7 +363,8 @@ class SectionProcessor:
                             section_id,
                             "《"+title+"》: "+content if title else content,
                             url,
-                            time_stamp
+                            time_stamp=time_stamp,
+                            model=model
                         )
                 
                 # 标记章节为已处理
@@ -370,7 +378,7 @@ class SectionProcessor:
             self.neo4j_host.execute_query("match (n) where elementid(n)=$id set n.find_entity=false", parameters={"id": section_id})
             # 之后统一对错误记录进行检查
 
-    def run_processing_loop(self):
+    def run_processing_loop(self, model):
         """主处理循环"""
         while True:
             sections = self.fetch_unprocessed_sections()
@@ -385,7 +393,8 @@ class SectionProcessor:
             for section in sections:
                 future = self.executor.submit(
                     self.process_single_section, 
-                    section
+                    section,
+                    model
                 )
                 futures.append(future)
                 # break
@@ -395,15 +404,15 @@ class SectionProcessor:
                 for _ in as_completed(futures):
                     pbar.update(1)
 
-def ner_re_entity_main(neo4j_host=None, max_worker=10):
+def ner_re_entity_main(neo4j_host=None, max_worker=10,model="qwen3-32b"):
     "进行初步实体关系抽取"
     if neo4j_host:
         processor = SectionProcessor(neo4j_host, max_worker=max_worker)
     else:
         processor = SectionProcessor(API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver), max_worker=max_worker)
-    processor.run_processing_loop()
+    processor.run_processing_loop(model)
 
 # 使用示例
 if __name__ == "__main__":
     processor = SectionProcessor(neo4j_host=API.neo4j_SPLC.Neo4jClient(driver=API.neo4j_SPLC.local_driver))
-    processor.run_processing_loop()
+    processor.run_processing_loop(model="qwen3-32b")

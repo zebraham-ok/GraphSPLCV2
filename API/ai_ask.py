@@ -103,9 +103,9 @@ def get_qwen_embedding(
         print(f"Error generating embedding: {e}")
         return None
     
-def ask_qwen_with_gpt_backup(prompt_text,history=[],system_instruction="",model="qwen-turbo",mode="str",temperature=0, enable_search=False, enable_citaton=False, retry_model="gpt-4o"):
+def ask_qwen_with_gpt_backup(prompt_text,history=[],system_instruction="",model="qwen-turbo",mode="str",temperature=0, enable_search=False, enable_citaton=False, retry_model="gpt-4o", enable_thinking=False):
     "优先使用Qwen，如果没有返回结果就问OpenAI"
-    qwen_result=ask_qwen(prompt_text, history, system_instruction, model, mode, temperature, enable_search, enable_citaton)
+    qwen_result=ask_qwen(prompt_text, history, system_instruction, model, mode, temperature, enable_search, enable_citaton, enable_thinking)
     if qwen_result:
         return qwen_result
     else:
@@ -114,7 +114,7 @@ def ask_qwen_with_gpt_backup(prompt_text,history=[],system_instruction="",model=
             print(f"Retried successful with {retry_model}")
             return gpt_result
 
-def ask_qwen(prompt_text,history=[],system_instruction="",model="qwen-turbo",mode="str",temperature=0, enable_search=False, enable_citaton=False):
+def ask_qwen(prompt_text,history=[],system_instruction="",model="qwen-turbo",mode="str",temperature=0, enable_search=False, enable_citaton=False, enable_thinking=False):
     "直接返回字符串"
     if mode=="json":
         response_format={ "type": "json_object" }
@@ -137,8 +137,9 @@ def ask_qwen(prompt_text,history=[],system_instruction="",model="qwen-turbo",mod
                     "enable_source": True,
                     "enable_citation": enable_citaton,
                     "citation_format": "[<number>]",
-                    "forced_search": False
-                    }
+                    "forced_search": False,
+                    },
+                "enable_thinking": enable_thinking
                 }
             )
         # print(completion)

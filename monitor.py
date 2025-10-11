@@ -14,6 +14,7 @@ def get_verified_counts():
     """
     query = """
     MATCH (:EntityObj)-[r:SupplyProductTo]->(:EntityObj)
+    where r.original_content is not null
     RETURN r.verified AS verified, COUNT(r) AS cnt_r
     """
     result = neo4j_host.execute_query(query)
