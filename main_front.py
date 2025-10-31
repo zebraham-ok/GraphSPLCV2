@@ -14,14 +14,14 @@ neo4j_host=get_remote_driver()
 # 定义主函数
 def main_end():
     # 使用线程池并行运行两个函数
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        future1 = executor.submit(ner_re_entity_main, neo4j_host, 10, "qwen-32b")  # 需要指定选择什么模型
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        # future1 = executor.submit(ner_re_entity_main, neo4j_host, 10, "qwen3-32b")  # 需要指定选择什么模型
         # future2 = executor.submit(entity_des_main, neo4j_host, 1)
         future3 = executor.submit(sql2neo4j_main, neo4j_host, 1)
         # future4 = executor.submit(qwen_embedding_entityobj, neo4j_host, 1)
         
         # 等待两个任务完成（可选）
-        future1.result()
+        # future1.result()
         # future2.result()
         future3.result()
         # future4.result()

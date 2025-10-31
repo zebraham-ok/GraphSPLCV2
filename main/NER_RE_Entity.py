@@ -152,6 +152,7 @@ def ai_relation_extraction_ORG(article_title, content, formal_entity_list, allow
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
+from datetime import date
 
 # 配置参数
 BATCH_SIZE = 100
@@ -280,6 +281,7 @@ class SectionProcessor:
                         "analysing_process": rel.get("analysing_process", ""),
                         "original_content": original_content,
                         "url": url,
+                        "updated_at": date.today(),
                         "qwen": True
                     }
             # 方便统计对每一个连边负有责任的模型

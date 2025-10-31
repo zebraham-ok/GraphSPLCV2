@@ -36,7 +36,7 @@ CREATE_ARTICLE_SECTIONS_QUERY='''
 
 def process_article_record(record, neo4j_host: API.neo4j_SPLC.Neo4jClient, spliter):
     "引入了判别模型"
-    sql_us_id,item,title,content,language,page_date = record
+    sql_us_id,item,title,content,language,page_date,useful_score = record
     if isinstance(content, str):
         # article_embedding=API.ai_ask.get_qwen_embedding(text=title, dimensions=512)
         # probas, article_useful=predict_text(embedding=article_embedding, mode="Article", threshold=0.4)
@@ -97,12 +97,16 @@ def sql2neo4j_main(neo4j_host=None, max_workers=15):
         #         where load_time is null and content is not null and content_len<20000
         #         order by useful desc limit 1000""")
         result_list=sql_host._execute_query(query="""
-                select US_id, item, title, content, language, page_date from crawler_main
-                where load_time is null and content is not null and content_len<50000 and LEFT(page_date, 4)>"2019"
+                select US_id, item, title, content, language, page_date, useful from crawler_main
+                where load_time is null and content is not null and content_len<50000
                 order by useful desc limit 1000""") # 暂时增加从2020年之后数据的导入
+        
         if len(result_list)==0:
             print("没有要导入的章节了")
             time.sleep(600)
+            
+        useful_number=[i[-1] for i in result_list]
+        print(f"max useful score is {max(useful_number)}, min useful score is {min(useful_number)}")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             list(tqdm(executor.map(lambda record: process_article_record(record, neo4j_host, spliter), result_list), total=len(result_list), desc="文本导入Neo4j"))
