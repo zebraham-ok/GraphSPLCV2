@@ -56,7 +56,7 @@ def process_article_record(record, neo4j_host: API.neo4j_SPLC.Neo4jClient, split
             "url": item,
             "pageTime":page_date,
             "language":language,
-            # "useful_prob": probas,
+            "useful_prob": useful_score,
             # "qwen_embedding": article_embedding
         }
             

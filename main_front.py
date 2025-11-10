@@ -16,7 +16,7 @@ def main_end():
     # 使用线程池并行运行两个函数
     with ThreadPoolExecutor(max_workers=1) as executor:
         # future1 = executor.submit(ner_re_entity_main, neo4j_host, 10, "qwen3-32b")  # 需要指定选择什么模型
-        # future2 = executor.submit(entity_des_main, neo4j_host, 1)
+        # future2 = executor.submit(entity_des_main, neo4j_host, 1)  # 之后可能要重新对于计算机、手机、显卡企业进行处理！
         future3 = executor.submit(sql2neo4j_main, neo4j_host, 1)
         # future4 = executor.submit(qwen_embedding_entityobj, neo4j_host, 1)
         
